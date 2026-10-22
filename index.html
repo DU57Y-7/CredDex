@@ -64,6 +64,7 @@ dialog h2{margin:0 0 12px;font-size:22px}
   <button class="btn" id="imp">Import</button>
   <button class="btn" id="exp">Export</button>
   <button class="btn pri" id="add">Add credential</button>
+  <button class="btn" id="shb" hidden>Share profile</button>
   <button class="btn" id="out" hidden>Sign out</button>
   <input type="file" id="impf" accept="application/json" hidden>
 </header>
@@ -88,6 +89,7 @@ dialog h2{margin:0 0 12px;font-size:22px}
   <label>Evidence link<input id="fu" type="url" placeholder="https://"></label>
   <label>Description<textarea id="fx" rows="3" maxlength="600"></textarea></label>
   <label>Tags (separate with commas)<input id="ft" placeholder="Leadership, University"></label>
+  <label style="display:flex;gap:8px;align-items:center;font-weight:400"><input id="fh" type="checkbox"> Hide from my public profile</label>
   <div class="row"><button class="btn" id="fc">Cancel</button><button class="btn pri" id="fs">Save credential</button></div>
 </div></dialog>
 <dialog id="da"><h2>Sign in to CredDex</h2><div class="f">
@@ -96,6 +98,13 @@ dialog h2{margin:0 0 12px;font-size:22px}
   <div class="meta" id="dam" role="alert"></div>
   <div class="row"><button class="btn" id="su">Create account</button><button class="btn pri" id="si">Sign in</button></div>
 </div></dialog>
+<dialog id="ds"><h2>Share your profile</h2><div class="f">
+  <label>Username<input id="pu" maxlength="30" placeholder="dustin" autocomplete="off"></label>
+  <label>Display name<input id="pn" maxlength="60"></label>
+  <label style="display:flex;gap:8px;align-items:center;font-weight:400"><input id="pv" type="checkbox"> Make my profile public</label>
+  <div class="meta" id="pl" style="word-break:break-all"></div>
+  <div class="row"><button class="btn" id="pc">Close</button><button class="btn" id="pk">Copy link</button><button class="btn pri" id="ps">Save profile</button></div>
+</div></dialog>
 <div id="toast" role="status"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -103,6 +112,7 @@ dialog h2{margin:0 0 12px;font-size:22px}
 (function(){
 var SB_URL="https://yjeqsgzivnxsaniarrjb.supabase.co",SB_KEY="sb_publishable_zza_qcM68oQERB8Saiqfdw_-Vssku-T";
 var sb=supabase.createClient(SB_URL,SB_KEY);
+var PUB=new URLSearchParams(location.search).get("u");
 var $=function(i){return document.getElementById(i)};
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function toast(m){var t=$("toast");t.textContent=m;t.className="on";clearTimeout(toast.h);toast.h=setTimeout(function(){t.className=""},3200)}
@@ -117,12 +127,20 @@ var items=[],sel={},editing=null,pendingImg="",imgChanged=false,user=null;
 function tagsHtml(c){return(c.tags&&c.tags.length)?'<div class="tags">'+c.tags.map(function(t){return '<span class="tag">'+esc(t)+'</span>'}).join("")+'</div>':""}
 function allTags(){var m={};items.forEach(function(c){(c.tags||[]).forEach(function(t){m[t]=1})});return Object.keys(m).sort(function(a,b){return a.localeCompare(b)})}
 function active(){return Object.keys(sel).filter(function(k){return sel[k]})}
-async function refresh(){
- var r=await sb.from("credentials").select("*").order("created_at");
+async function loadPublic(){
+ var p=await sb.from("profiles").select("user_id,username,display_name").eq("username",PUB.toLowerCase()).maybeSingle(),s=document.querySelector("h1 small");
+ if(p.error||!p.data){s.textContent="This profile doesn’t exist or isn’t public.";items=[];render();return}
+ var nm=p.data.display_name||p.data.username;s.textContent=nm+"’s credentials";document.title=nm+" on CredDex";
+ await refresh(p.data.user_id);
+}
+async function refresh(owner){
+ var qy=sb.from("credentials").select("*");
+ qy=owner?qy.eq("user_id",owner).eq("hidden",false):qy.eq("user_id",user.id);
+ var r=await qy.order("created_at");
  if(r.error){toast("Couldn’t load your collection: "+r.error.message);return}
  var paths=r.data.filter(function(x){return x.badge_path}).map(function(x){return x.badge_path}),urls={};
  if(paths.length){var s=await sb.storage.from("badges").createSignedUrls(paths,3600);(s.data||[]).forEach(function(u){urls[u.path]=u.signedUrl})}
- items=r.data.map(function(x){return{id:x.id,name:x.name,issuer:x.issuer,date:x.earned_on||"",desc:x.description||"",url:x.evidence_url||"",tags:x.tags||[],path:x.badge_path,img:urls[x.badge_path]||""}});
+ items=r.data.map(function(x){return{id:x.id,name:x.name,issuer:x.issuer,date:x.earned_on||"",desc:x.description||"",url:x.evidence_url||"",tags:x.tags||[],path:x.badge_path,hidden:!!x.hidden,img:urls[x.badge_path]||""}});
  render();
 }
 function render(){
@@ -136,8 +154,8 @@ function render(){
  $("grid").innerHTML=list.map(function(c){
   return '<div class="card" tabindex="0" role="button" data-id="'+esc(c.id)+'">'+badge(c)+'<h3>'+esc(c.name)+'</h3><div class="meta">'+esc(c.issuer)+(c.date?" · "+esc(fmt(c.date)):"")+'</div>'+tagsHtml(c)+'</div>'}).join("");
  $("count").textContent=list.length+(list.length===items.length?"":" of "+items.length)+(items.length===1?" credential":" credentials");
- var e=$("empty");e.hidden=list.length>0||!user;
- e.textContent=items.length?"No credentials match. Clear the search or tag filter.":"Your collection is empty. Add your first credential.";
+ var e=$("empty");e.hidden=list.length>0||(!user&&!PUB);
+ e.textContent=items.length?"No credentials match. Clear the search or tag filter.":(PUB?"No public credentials yet.":"Your collection is empty. Add your first credential.");
  $("fb").textContent=a.length?"Filter by tag ("+a.length+")":"Filter by tag";
 }
 function renderFilter(){
@@ -154,7 +172,7 @@ function open(id){
  var url=/^https?:\/\//i.test(c.url||"")?c.url:"";
  $("dvb").innerHTML=badge(c)+'<h2>'+esc(c.name)+'</h2><div class="meta">'+esc(c.issuer)+(c.date?" · "+esc(fmt(c.date)):"")+'</div>'+(c.desc?'<p>'+esc(c.desc)+'</p>':"")+tagsHtml(c)+
   (url?'<p><a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">View evidence</a></p>':"")+
-  '<div class="row"><button class="btn del" data-a="del" data-id="'+esc(id)+'">Delete</button><button class="btn" data-a="edit" data-id="'+esc(id)+'">Edit</button><button class="btn pri" data-a="close">Close</button></div>';
+  '<div class="row">'+(PUB?"":'<button class="btn del" data-a="del" data-id="'+esc(id)+'">Delete</button><button class="btn" data-a="edit" data-id="'+esc(id)+'">Edit</button>')+'<button class="btn pri" data-a="close">Close</button></div>';
  $("dv").showModal();
 }
 $("grid").onclick=function(e){var c=e.target.closest(".card");if(c)open(c.dataset.id)};
@@ -174,7 +192,7 @@ function form(id){
  editing=id||null;imgChanged=false;var c=id?items.filter(function(x){return x.id===id})[0]:{};
  $("dft").textContent=id?"Edit credential":"Add credential";
  $("fn").value=c.name||"";$("fi").value=c.issuer||"";$("fd").value=c.date||"";$("fu").value=c.url||"";$("fx").value=c.desc||"";$("ft").value=(c.tags||[]).join(", ");$("fimg").value="";
- pendingImg=c.img||"";$("df").showModal();
+ pendingImg=c.img||"";$("fh").checked=!!c.hidden;$("df").showModal();
 }
 $("add").onclick=function(){form()};
 $("fc").onclick=function(){$("df").close()};
@@ -197,7 +215,7 @@ $("fs").onclick=async function(){
  var btn=this;btn.disabled=true;
  var cur=editing?items.filter(function(x){return x.id===editing})[0]:null,path=cur?cur.path||null:null;
  if(imgChanged&&pendingImg){var old=path;path=await upload(pendingImg);if(!path)toast("Badge image didn’t upload.");else if(old)await sb.storage.from("badges").remove([old])}
- var row={name:n,issuer:i,earned_on:$("fd").value||null,description:$("fx").value.trim()||null,evidence_url:u||null,tags:tags,badge_path:path};
+ var row={name:n,issuer:i,earned_on:$("fd").value||null,description:$("fx").value.trim()||null,evidence_url:u||null,tags:tags,badge_path:path,hidden:$("fh").checked};
  var r=editing?await sb.from("credentials").update(Object.assign(row,{updated_at:new Date().toISOString()})).eq("id",editing):await sb.from("credentials").insert(row);
  btn.disabled=false;
  if(r.error){toast("Couldn’t save: "+r.error.message);return}
@@ -235,6 +253,20 @@ $("mig").onclick=async function(){
  try{localStorage.setItem("creddex:migrated:"+user.id,"1")}catch(e){}
  $("mig").hidden=true;toast("Uploaded "+n+" credentials from this browser");
 };
+function showLink(){var u=$("pu").value.trim().toLowerCase();$("pl").textContent=u?location.origin+location.pathname+"?u="+u:""}
+$("shb").onclick=async function(){
+ var r=await sb.from("profiles").select("*").eq("user_id",user.id).maybeSingle(),d=r.data;
+ $("pu").value=d?d.username:"";$("pn").value=d&&d.display_name||"";$("pv").checked=d?d.is_public:true;showLink();$("ds").showModal()};
+$("pu").oninput=showLink;
+$("pc").onclick=function(){$("ds").close()};
+$("ps").onclick=async function(){
+ var u=$("pu").value.trim().toLowerCase();
+ if(!/^[a-z0-9_]{3,30}$/.test(u)){toast("Username needs 3–30 letters, numbers or underscores.");return}
+ var r=await sb.from("profiles").upsert({user_id:user.id,username:u,display_name:$("pn").value.trim()||null,is_public:$("pv").checked},{onConflict:"user_id"});
+ if(r.error){toast(r.error.code==="23505"?"That username is taken. Try another.":"Couldn’t save: "+r.error.message);return}
+ toast($("pv").checked?"Saved. Your link is live.":"Saved. Your profile is private.");showLink()};
+$("pk").onclick=function(){var t=$("pl").textContent;if(!t){toast("Enter a username first.");return}
+ navigator.clipboard.writeText(t).then(function(){toast("Link copied")},function(){toast("Copy the link by hand.")})};
 function msg(t){$("dam").textContent=t}
 $("da").oncancel=function(e){e.preventDefault()};
 $("si").onclick=async function(){
@@ -244,9 +276,9 @@ $("su").onclick=async function(){
  var r=await sb.auth.signUp({email:$("ae").value.trim(),password:$("ap").value,options:{emailRedirectTo:location.href.split("#")[0]}});
  if(r.error)msg(r.error.message);else if(!r.data.session)msg("Check your email and confirm your address, then sign in.")};
 $("out").onclick=function(){sb.auth.signOut()};
-sb.auth.onAuthStateChange(function(ev,s){
+if(PUB){["add","imp","exp","out","mig","shb"].forEach(function(i){$(i).hidden=true});loadPublic()}else sb.auth.onAuthStateChange(function(ev,s){
  setTimeout(function(){
-  user=s?s.user:null;$("out").hidden=!user;$("who").textContent=user?user.email:"";
+  user=s?s.user:null;$("out").hidden=!user;$("shb").hidden=!user;$("who").textContent=user?user.email:"";
   if(user){if($("da").open)$("da").close();checkMig();refresh()}
   else{items=[];render();$("ap").value="";if(!$("da").open)$("da").showModal()}
  },0)});
