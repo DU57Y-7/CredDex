@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CredDex</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1f4;--card:#fff;--ink:#1b2433;--mute:#667085;--line:#d5dbe3;--acc:#0e7c86;--accink:#fff;--danger:#b42318;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121821;--card:#1b2431;--ink:#e8edf3;--mute:#9aa6b6;--line:#2e3a4b;--acc:#35b9c4;--accink:#08202a;--danger:#f97066}}
+:root[data-theme="dark"]{--bg:#121821;--card:#1b2431;--ink:#e8edf3;--mute:#9aa6b6;--line:#2e3a4b;--acc:#35b9c4;--accink:#08202a;--danger:#f97066}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 "Bricolage Grotesque",system-ui,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;padding:20px clamp(16px,4vw,40px) 8px}
+h1{margin:0;font-size:28px;font-weight:800;letter-spacing:-.02em;flex:1 1 auto}
+h1 small{display:block;font-size:14px;font-weight:400;color:var(--mute);letter-spacing:0}
+button,input,select,textarea{font:inherit;color:inherit}
+.btn{border:1px solid var(--line);background:var(--card);padding:8px 14px;border-radius:8px;cursor:pointer}
+.btn.pri{background:var(--acc);color:var(--accink);border-color:var(--acc);font-weight:600}
+.btn.del{color:var(--danger)}
+.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.card:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;padding:8px clamp(16px,4vw,40px) 16px;align-items:center}
+.bar input[type=search],.bar select{padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+.bar input[type=search]{flex:1 1 200px;min-width:0}
+.count{color:var(--mute);margin-left:auto}
+.fw{position:relative}
+.fp{position:absolute;z-index:5;top:calc(100% + 6px);left:0;min-width:220px;max-height:300px;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:6px}
+.fp label{display:flex;gap:8px;align-items:center;padding:6px 8px;border-radius:6px;cursor:pointer}
+.fp label:hover{background:var(--bg)}
+.fp .none{padding:8px;color:var(--mute)}
+.fp .clr{width:100%;margin-top:4px}
+main{padding:0 clamp(16px,4vw,40px) 40px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 16px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px}
+.card:hover{border-color:var(--acc)}
+.badge{width:112px;height:112px;display:block;object-fit:contain}
+.card h3{margin:6px 0 0;font-size:16px;font-weight:600;line-height:1.25}
+.meta{color:var(--mute);font-size:14px}
+.tags{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:4px}
+.tag{font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--mute)}
+.empty{text-align:center;padding:60px 16px;color:var(--mute)}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);padding:22px;width:min(480px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto}
+dialog::backdrop{background:rgba(10,15,22,.55)}
+dialog h2{margin:0 0 12px;font-size:22px}
+.f{display:grid;gap:12px}
+.f label{display:grid;gap:4px;font-weight:600;font-size:14px}
+.f input,.f textarea{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-weight:400}
+.row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:6px}
+.dt{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.dt .badge{width:160px;height:160px}
+.dt p{margin:4px 0;white-space:pre-wrap}
+.dt a{color:var(--acc)}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>CredDex<small>Your collection of micro-credentials</small></h1>
+  <span class="meta" id="who"></span>
+  <button class="btn" id="mig" hidden>Upload this browser’s credentials</button>
+  <button class="btn" id="imp">Import</button>
+  <button class="btn" id="exp">Export</button>
+  <button class="btn pri" id="add">Add credential</button>
+  <button class="btn" id="out" hidden>Sign out</button>
+  <input type="file" id="impf" accept="application/json" hidden>
+</header>
+<div class="bar">
+  <input type="search" id="q" placeholder="Search by name or issuer" aria-label="Search credentials">
+  <div class="fw"><button class="btn" id="fb" aria-expanded="false">Filter by tag</button><div class="fp" id="fp" hidden></div></div>
+  <select id="sort" aria-label="Sort credentials">
+    <option value="new">Newest earned</option><option value="old">Oldest earned</option>
+    <option value="az">Name A–Z</option><option value="iss">Issuer A–Z</option>
+  </select>
+  <span class="count" id="count"></span>
+</div>
+<main><div class="grid" id="grid"></div><div class="empty" id="empty" hidden></div></main>
+
+<dialog id="dv"><div class="dt" id="dvb"></div></dialog>
+<dialog id="df"><h2 id="dft">Add credential</h2>
+<div class="f">
+  <label>Credential name<input id="fn" required maxlength="120"></label>
+  <label>Issuing organisation<input id="fi" required maxlength="120"></label>
+  <label>Date earned<input id="fd" type="date"></label>
+  <label>Badge image<input id="fimg" type="file" accept="image/*"></label>
+  <label>Evidence link<input id="fu" type="url" placeholder="https://"></label>
+  <label>Description<textarea id="fx" rows="3" maxlength="600"></textarea></label>
+  <label>Tags (separate with commas)<input id="ft" placeholder="Leadership, University"></label>
+  <div class="row"><button class="btn" id="fc">Cancel</button><button class="btn pri" id="fs">Save credential</button></div>
+</div></dialog>
+<dialog id="da"><h2>Sign in to CredDex</h2><div class="f">
+  <label>Email<input id="ae" type="email" autocomplete="email"></label>
+  <label>Password<input id="ap" type="password" autocomplete="current-password" minlength="8"></label>
+  <div class="meta" id="dam" role="alert"></div>
+  <div class="row"><button class="btn" id="su">Create account</button><button class="btn pri" id="si">Sign in</button></div>
+</div></dialog>
+<div id="toast" role="status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+(function(){
+var SB_URL="https://yjeqsgzivnxsaniarrjb.supabase.co",SB_KEY="sb_publishable_zza_qcM68oQERB8Saiqfdw_-Vssku-T";
+var sb=supabase.createClient(SB_URL,SB_KEY);
+var $=function(i){return document.getElementById(i)};
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function toast(m){var t=$("toast");t.textContent=m;t.className="on";clearTimeout(toast.h);toast.h=setTimeout(function(){t.className=""},3200)}
+function hue(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%360;return h}
+function badge(c){
+ if(c.img)return '<img class="badge" alt="" src="'+esc(c.img)+'">';
+ var h=hue(c.issuer||c.name),ini=(c.issuer||"?").split(/\s+/).filter(Boolean).slice(0,2).map(function(w){return w[0]}).join("").toUpperCase();
+ return '<svg class="badge" viewBox="0 0 100 100" aria-hidden="true"><polygon points="50,4 91,27 91,73 50,96 9,73 9,27" fill="hsl('+h+',55%,38%)"/><polygon points="50,12 84,31 84,69 50,88 16,69 16,31" fill="none" stroke="hsl('+h+',60%,80%)" stroke-width="2"/><text x="50" y="58" text-anchor="middle" font-size="26" font-weight="800" fill="#fff" font-family="Bricolage Grotesque,system-ui,sans-serif">'+esc(ini)+'</text></svg>';
+}
+function fmt(d){if(!d)return "";var x=new Date(d+"T00:00:00");return isNaN(x)?d:x.toLocaleDateString("en-AU",{month:"short",year:"numeric"})}
+var items=[],sel={},editing=null,pendingImg="",imgChanged=false,user=null;
+function tagsHtml(c){return(c.tags&&c.tags.length)?'<div class="tags">'+c.tags.map(function(t){return '<span class="tag">'+esc(t)+'</span>'}).join("")+'</div>':""}
+function allTags(){var m={};items.forEach(function(c){(c.tags||[]).forEach(function(t){m[t]=1})});return Object.keys(m).sort(function(a,b){return a.localeCompare(b)})}
+function active(){return Object.keys(sel).filter(function(k){return sel[k]})}
+async function refresh(){
+ var r=await sb.from("credentials").select("*").order("created_at");
+ if(r.error){toast("Couldn’t load your collection: "+r.error.message);return}
+ var paths=r.data.filter(function(x){return x.badge_path}).map(function(x){return x.badge_path}),urls={};
+ if(paths.length){var s=await sb.storage.from("badges").createSignedUrls(paths,3600);(s.data||[]).forEach(function(u){urls[u.path]=u.signedUrl})}
+ items=r.data.map(function(x){return{id:x.id,name:x.name,issuer:x.issuer,date:x.earned_on||"",desc:x.description||"",url:x.evidence_url||"",tags:x.tags||[],path:x.badge_path,img:urls[x.badge_path]||""}});
+ render();
+}
+function render(){
+ var q=$("q").value.trim().toLowerCase(),a=active(),s=$("sort").value;
+ var list=items.filter(function(c){
+  return(!q||(c.name+" "+c.issuer).toLowerCase().indexOf(q)>-1)&&(!a.length||(c.tags||[]).some(function(t){return a.indexOf(t)>-1}))});
+ list.sort(function(x,y){
+  if(s==="az")return x.name.localeCompare(y.name);
+  if(s==="iss")return x.issuer.localeCompare(y.issuer);
+  var r=(y.date||"").localeCompare(x.date||"");return s==="old"?-r:r});
+ $("grid").innerHTML=list.map(function(c){
+  return '<div class="card" tabindex="0" role="button" data-id="'+esc(c.id)+'">'+badge(c)+'<h3>'+esc(c.name)+'</h3><div class="meta">'+esc(c.issuer)+(c.date?" · "+esc(fmt(c.date)):"")+'</div>'+tagsHtml(c)+'</div>'}).join("");
+ $("count").textContent=list.length+(list.length===items.length?"":" of "+items.length)+(items.length===1?" credential":" credentials");
+ var e=$("empty");e.hidden=list.length>0||!user;
+ e.textContent=items.length?"No credentials match. Clear the search or tag filter.":"Your collection is empty. Add your first credential.";
+ $("fb").textContent=a.length?"Filter by tag ("+a.length+")":"Filter by tag";
+}
+function renderFilter(){
+ var t=allTags();
+ $("fp").innerHTML=t.length?t.map(function(x){return '<label><input type="checkbox" value="'+esc(x)+'"'+(sel[x]?" checked":"")+'> '+esc(x)+'</label>'}).join("")+'<button class="btn clr" id="clr">Clear filter</button>':'<div class="none">No tags yet. Add tags when you save a credential.</div>';
+}
+$("fb").onclick=function(e){e.stopPropagation();var p=$("fp");if(p.hidden)renderFilter();p.hidden=!p.hidden;$("fb").setAttribute("aria-expanded",String(!p.hidden))};
+$("fp").onclick=function(e){e.stopPropagation();if(e.target.id==="clr"){sel={};renderFilter();render()}};
+$("fp").onchange=function(e){sel[e.target.value]=e.target.checked;render()};
+document.addEventListener("click",function(){$("fp").hidden=true;$("fb").setAttribute("aria-expanded","false")});
+$("q").oninput=render;$("sort").onchange=render;
+function open(id){
+ var c=items.filter(function(x){return x.id===id})[0];if(!c)return;
+ var url=/^https?:\/\//i.test(c.url||"")?c.url:"";
+ $("dvb").innerHTML=badge(c)+'<h2>'+esc(c.name)+'</h2><div class="meta">'+esc(c.issuer)+(c.date?" · "+esc(fmt(c.date)):"")+'</div>'+(c.desc?'<p>'+esc(c.desc)+'</p>':"")+tagsHtml(c)+
+  (url?'<p><a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">View evidence</a></p>':"")+
+  '<div class="row"><button class="btn del" data-a="del" data-id="'+esc(id)+'">Delete</button><button class="btn" data-a="edit" data-id="'+esc(id)+'">Edit</button><button class="btn pri" data-a="close">Close</button></div>';
+ $("dv").showModal();
+}
+$("grid").onclick=function(e){var c=e.target.closest(".card");if(c)open(c.dataset.id)};
+$("grid").onkeydown=function(e){if(e.key==="Enter"||e.key===" "){var c=e.target.closest(".card");if(c){e.preventDefault();open(c.dataset.id)}}};
+$("dv").onclick=async function(e){
+ var a=e.target.dataset&&e.target.dataset.a,id=e.target.dataset&&e.target.dataset.id;
+ if(a==="close"||e.target===$("dv"))$("dv").close();
+ if(a==="edit"){$("dv").close();form(id)}
+ if(a==="del"&&confirm("Delete this credential? This can’t be undone.")){
+  var c=items.filter(function(x){return x.id===id})[0];
+  var r=await sb.from("credentials").delete().eq("id",id);
+  if(r.error){toast("Couldn’t delete: "+r.error.message);return}
+  if(c&&c.path)await sb.storage.from("badges").remove([c.path]);
+  $("dv").close();await refresh();toast("Credential deleted")}
+};
+function form(id){
+ editing=id||null;imgChanged=false;var c=id?items.filter(function(x){return x.id===id})[0]:{};
+ $("dft").textContent=id?"Edit credential":"Add credential";
+ $("fn").value=c.name||"";$("fi").value=c.issuer||"";$("fd").value=c.date||"";$("fu").value=c.url||"";$("fx").value=c.desc||"";$("ft").value=(c.tags||[]).join(", ");$("fimg").value="";
+ pendingImg=c.img||"";$("df").showModal();
+}
+$("add").onclick=function(){form()};
+$("fc").onclick=function(){$("df").close()};
+$("fimg").onchange=function(){
+ var f=this.files[0];if(!f)return;
+ var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){
+  var k=Math.min(1,256/Math.max(im.width,im.height)),cv=document.createElement("canvas");
+  cv.width=Math.round(im.width*k);cv.height=Math.round(im.height*k);cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);
+  pendingImg=cv.toDataURL("image/png");imgChanged=true;toast("Badge image added")};
+  im.onerror=function(){toast("That file isn’t a readable image.")};im.src=r.result};r.readAsDataURL(f)};
+async function upload(dataUrl){
+ try{var b=await(await fetch(dataUrl)).blob(),p=user.id+"/"+crypto.randomUUID()+".png";
+  var r=await sb.storage.from("badges").upload(p,b,{contentType:"image/png"});return r.error?null:p}catch(e){return null}
+}
+$("fs").onclick=async function(){
+ var n=$("fn").value.trim(),i=$("fi").value.trim();
+ if(!n||!i){toast("Add a credential name and issuer.");return}
+ var u=$("fu").value.trim();if(u&&!/^https?:\/\//i.test(u)){toast("Evidence link must start with http:// or https://");return}
+ var tags=[];$("ft").value.split(",").forEach(function(t){t=t.trim();if(t&&tags.indexOf(t)<0)tags.push(t)});
+ var btn=this;btn.disabled=true;
+ var cur=editing?items.filter(function(x){return x.id===editing})[0]:null,path=cur?cur.path||null:null;
+ if(imgChanged&&pendingImg){var old=path;path=await upload(pendingImg);if(!path)toast("Badge image didn’t upload.");else if(old)await sb.storage.from("badges").remove([old])}
+ var row={name:n,issuer:i,earned_on:$("fd").value||null,description:$("fx").value.trim()||null,evidence_url:u||null,tags:tags,badge_path:path};
+ var r=editing?await sb.from("credentials").update(Object.assign(row,{updated_at:new Date().toISOString()})).eq("id",editing):await sb.from("credentials").insert(row);
+ btn.disabled=false;
+ if(r.error){toast("Couldn’t save: "+r.error.message);return}
+ $("df").close();await refresh();toast("Credential saved");
+};
+async function addMany(list){
+ var n=0;
+ for(var c of list){if(!c||!c.name||!c.issuer)continue;
+  var p=c.img&&String(c.img).indexOf("data:")===0?await upload(c.img):null;
+  var r=await sb.from("credentials").insert({name:String(c.name).slice(0,120),issuer:String(c.issuer).slice(0,120),earned_on:c.date||null,description:c.desc?String(c.desc).slice(0,600):null,evidence_url:/^https?:\/\//i.test(c.url||"")?c.url:null,tags:Array.isArray(c.tags)?c.tags:[],badge_path:p});
+  if(!r.error)n++}
+ await refresh();return n;
+}
+$("exp").onclick=async function(){
+ toast("Preparing backup…");var out=[];
+ for(var c of items){var img="";
+  if(c.img){try{var b=await(await fetch(c.img)).blob();img=await new Promise(function(res){var f=new FileReader();f.onload=function(){res(f.result)};f.readAsDataURL(b)})}catch(e){}}
+  out.push({name:c.name,issuer:c.issuer,date:c.date,desc:c.desc,url:c.url,tags:c.tags,img:img})}
+ var b2=new Blob([JSON.stringify({app:"creddex",version:1,credentials:out},null,2)],{type:"application/json"});
+ var a=document.createElement("a");a.href=URL.createObjectURL(b2);a.download="creddex-backup.json";document.body.appendChild(a);a.click();a.remove();
+ toast("Backup downloaded, including badge images");
+};
+$("imp").onclick=function(){$("impf").click()};
+$("impf").onchange=function(){
+ var f=this.files[0];if(!f)return;var r=new FileReader(),inp=this;
+ r.onload=async function(){try{
+  var d=JSON.parse(r.result),l=Array.isArray(d)?d:d.credentials;if(!Array.isArray(l))throw 0;
+  toast("Importing…");var n=await addMany(l);toast("Imported "+n+" credentials")}catch(e){toast("That file isn’t a valid CredDex backup.")}};
+ r.readAsText(f);inp.value="";
+};
+function localItems(){try{var l=JSON.parse(localStorage.getItem("creddex:v1")||"[]");return l.filter(function(c){return["s1","s2","s3"].indexOf(c.id)<0})}catch(e){return[]}}
+function checkMig(){$("mig").hidden=!(localItems().length&&!localStorage.getItem("creddex:migrated:"+user.id))}
+$("mig").onclick=async function(){
+ toast("Uploading…");var n=await addMany(localItems());
+ try{localStorage.setItem("creddex:migrated:"+user.id,"1")}catch(e){}
+ $("mig").hidden=true;toast("Uploaded "+n+" credentials from this browser");
+};
+function msg(t){$("dam").textContent=t}
+$("da").oncancel=function(e){e.preventDefault()};
+$("si").onclick=async function(){
+ var r=await sb.auth.signInWithPassword({email:$("ae").value.trim(),password:$("ap").value});
+ if(r.error)msg(r.error.message)};
+$("su").onclick=async function(){
+ var r=await sb.auth.signUp({email:$("ae").value.trim(),password:$("ap").value,options:{emailRedirectTo:location.href.split("#")[0]}});
+ if(r.error)msg(r.error.message);else if(!r.data.session)msg("Check your email and confirm your address, then sign in.")};
+$("out").onclick=function(){sb.auth.signOut()};
+sb.auth.onAuthStateChange(function(ev,s){
+ setTimeout(function(){
+  user=s?s.user:null;$("out").hidden=!user;$("who").textContent=user?user.email:"";
+  if(user){if($("da").open)$("da").close();checkMig();refresh()}
+  else{items=[];render();$("ap").value="";if(!$("da").open)$("da").showModal()}
+ },0)});
+})();
+</script>
+</body>
+</html>
