@@ -125,13 +125,13 @@ function badge(c){
  return '<svg class="badge" viewBox="0 0 100 100" aria-hidden="true"><polygon points="50,4 91,27 91,73 50,96 9,73 9,27" fill="hsl('+h+',55%,38%)"/><polygon points="50,12 84,31 84,69 50,88 16,69 16,31" fill="none" stroke="hsl('+h+',60%,80%)" stroke-width="2"/><text x="50" y="58" text-anchor="middle" font-size="26" font-weight="800" fill="#fff" font-family="Bricolage Grotesque,system-ui,sans-serif">'+esc(ini)+'</text></svg>';
 }
 function fmt(d){if(!d)return "";var x=new Date(d+"T00:00:00");return isNaN(x)?d:x.toLocaleDateString("en-AU",{month:"short",year:"numeric"})}
-var items=[],sel={},editing=null,pendingImg="",imgChanged=false,user=null;
+var pubMsg="",items=[],sel={},editing=null,pendingImg="",imgChanged=false,user=null;
 function tagsHtml(c){return(c.tags&&c.tags.length)?'<div class="tags">'+c.tags.map(function(t){return '<span class="tag">'+esc(t)+'</span>'}).join("")+'</div>':""}
 function allTags(){var m={};items.forEach(function(c){(c.tags||[]).forEach(function(t){m[t]=1})});return Object.keys(m).sort(function(a,b){return a.localeCompare(b)})}
 function active(){return Object.keys(sel).filter(function(k){return sel[k]})}
 async function loadPublic(){
  var p=await sb.from("profiles").select("user_id,username,display_name").eq("username",PUB.toLowerCase()).maybeSingle(),s=document.querySelector("h1 small");
- if(p.error||!p.data){s.textContent="This profile doesn’t exist or isn’t public.";items=[];render();return}
+ if(p.error||!p.data){pubMsg="This profile doesn’t exist or isn’t public. Check the username in the link.";s.textContent=pubMsg;items=[];render();return}
  var nm=p.data.display_name||p.data.username;s.textContent=nm+"’s credentials";document.title=nm+" on CredDex";
  await refresh(p.data.user_id);
 }
@@ -139,7 +139,7 @@ async function refresh(owner){
  var qy=sb.from("credentials").select("*");
  qy=owner?qy.eq("user_id",owner).eq("hidden",false):qy.eq("user_id",user.id);
  var r=await qy.order("created_at");
- if(r.error){toast("Couldn’t load your collection: "+r.error.message);return}
+ if(r.error){pubMsg="Couldn’t load credentials: "+r.error.message;toast("Couldn’t load your collection: "+r.error.message);render();return}
  var paths=r.data.filter(function(x){return x.badge_path}).map(function(x){return x.badge_path}),urls={};
  if(paths.length){var s=await sb.storage.from("badges").createSignedUrls(paths,3600);(s.data||[]).forEach(function(u){urls[u.path]=u.signedUrl})}
  items=r.data.map(function(x){return{id:x.id,name:x.name,issuer:x.issuer,date:x.earned_on||"",desc:x.description||"",url:x.evidence_url||"",tags:x.tags||[],path:x.badge_path,hidden:!!x.hidden,img:urls[x.badge_path]||""}});
@@ -158,6 +158,7 @@ function render(){
  $("count").textContent=list.length+(list.length===items.length?"":" of "+items.length)+(items.length===1?" credential":" credentials");
  var e=$("empty");e.hidden=list.length>0||(!user&&!PUB);
  e.textContent=items.length?"No credentials match. Clear the search or tag filter.":(PUB?"No public credentials yet.":"Your collection is empty. Add your first credential.");
+ if(PUB&&pubMsg){e.textContent=pubMsg;e.hidden=false}
  $("fb").textContent=a.length?"Filter by tag ("+a.length+")":"Filter by tag";
 }
 function renderFilter(){
