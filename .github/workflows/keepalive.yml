@@ -1,0 +1,14 @@
+name: Keep Supabase awake
+on:
+  schedule:
+    - cron: "17 3 */3 * *"
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping the database
+        run: |
+          curl --fail --silent --show-error \
+            "https://yjeqsgzivnxsaniarrjb.supabase.co/rest/v1/profiles?select=username&limit=1" \
+            -H "apikey: sb_publishable_zza_qcM68oQERB8Saiqfdw_-Vssku-T"
