@@ -62,10 +62,9 @@ dialog h2{margin:0 0 12px;font-size:22px}
   <h1>CredDex<small>Your collection of micro-credentials</small></h1>
   <span class="meta" id="who"></span>
   <button class="btn" id="mig" hidden>Upload this browser’s credentials</button>
-  <button class="btn" id="imp">Import</button>
-  <button class="btn" id="exp">Export</button>
   <button class="btn pri" id="add">Add credential</button>
-  <button class="btn" id="shb" hidden>Share profile</button>
+  <button class="btn" id="shb" hidden>Copy share link</button>
+  <button class="btn" id="stb" hidden>Embed &amp; backup</button>
   <button class="btn" id="out" hidden>Sign out</button>
   <input type="file" id="impf" accept="application/json" hidden>
 </header>
@@ -94,17 +93,30 @@ dialog h2{margin:0 0 12px;font-size:22px}
   <div class="row"><button class="btn" id="fc">Cancel</button><button class="btn pri" id="fs">Save credential</button></div>
 </div></dialog>
 <dialog id="da"><h2>Sign in to CredDex</h2><div class="f">
+  <button class="btn" id="gg">Continue with Google</button>
+  <button class="btn" id="li" hidden>Continue with LinkedIn</button>
+  <div class="meta" style="text-align:center">or use email</div>
   <label>Email<input id="ae" type="email" autocomplete="email"></label>
   <label>Password<input id="ap" type="password" autocomplete="current-password" minlength="8"></label>
   <div class="meta" id="dam" role="alert"></div>
   <div class="row"><button class="btn" id="su">Create account</button><button class="btn pri" id="si">Sign in</button></div>
 </div></dialog>
-<dialog id="ds"><h2>Share your profile</h2><div class="f">
+<dialog id="ds"><h2>Profile, embed &amp; backup</h2><div class="f">
   <label>Username<input id="pu" maxlength="30" placeholder="dustin" autocomplete="off"></label>
   <label>Display name<input id="pn" maxlength="60"></label>
   <label style="display:flex;gap:8px;align-items:center;font-weight:400"><input id="pv" type="checkbox"> Make my profile public</label>
   <div class="meta" id="pl" style="word-break:break-all"></div>
-  <div class="row"><button class="btn" id="pc">Close</button><button class="btn" id="pk">Copy link</button><button class="btn pri" id="ps">Save profile</button></div>
+  <div class="row"><button class="btn" id="pk">Copy link</button><button class="btn pri" id="ps">Save profile</button></div>
+  <h3 style="margin:8px 0 0">Embed on your website</h3>
+  <div class="meta">Paste this where you want your credentials to appear. Save your profile first and keep it public.</div>
+  <label>Theme<select id="pt" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-weight:400"><option value="">Match the visitor’s device</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+  <label>Height (pixels)<input id="ph" type="number" min="200" max="2000" value="620"></label>
+  <textarea id="pe" readonly rows="6" style="font:13px/1.4 ui-monospace,monospace;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg)"></textarea>
+  <div class="row"><button class="btn pri" id="pm">Copy embed code</button></div>
+  <h3 style="margin:8px 0 0">Backup</h3>
+  <div class="meta">Your credentials are saved in your account. Download a copy any time, or restore one.</div>
+  <div class="row"><button class="btn" id="imp">Import</button><button class="btn" id="exp">Export</button></div>
+  <div class="row"><button class="btn" id="pc">Close</button></div>
 </div></dialog>
 <div id="toast" role="status"></div>
 
@@ -256,10 +268,23 @@ $("mig").onclick=async function(){
  try{localStorage.setItem("creddex:migrated:"+user.id,"1")}catch(e){}
  $("mig").hidden=true;toast("Uploaded "+n+" credentials from this browser");
 };
-function showLink(){var u=$("pu").value.trim().toLowerCase();$("pl").textContent=u?location.origin+location.pathname+"?u="+u:""}
-$("shb").onclick=async function(){
+function showLink(){
+ var u=$("pu").value.trim().toLowerCase().replace(/[^a-z0-9_]/g,""),base=location.origin+location.pathname,th=$("pt").value,ht=Math.min(2000,Math.max(200,parseInt($("ph").value,10)||620));
+ $("pl").textContent=u?base+"?u="+u:"";
+ $("pe").value=u?'<iframe\n  src="'+base+'?u='+u+'&embed=1'+(th?'&theme='+th:'')+'"\n  title="Credentials of '+u+'"\n  loading="lazy"\n  style="width:100%;height:'+ht+'px;border:0"></iframe>':"";
+}
+$("pt").onchange=showLink;$("ph").oninput=showLink;
+$("pm").onclick=function(){var t=$("pe").value;if(!t){toast("Enter your username first.");return}
+ navigator.clipboard.writeText(t).then(function(){toast("Embed code copied")},function(){$("pe").select();toast("Press Ctrl+C to copy.")})};
+async function openShare(){
  var r=await sb.from("profiles").select("*").eq("user_id",user.id).maybeSingle(),d=r.data;
- $("pu").value=d?d.username:"";$("pn").value=d&&d.display_name||"";$("pv").checked=d?d.is_public:true;showLink();$("ds").showModal()};
+ $("pu").value=d?d.username:"";$("pn").value=d&&d.display_name||"";$("pv").checked=d?d.is_public:true;showLink();$("ds").showModal()}
+$("stb").onclick=openShare;
+$("shb").onclick=async function(){
+ var r=await sb.from("profiles").select("username,is_public").eq("user_id",user.id).maybeSingle(),d=r.data;
+ if(!d||!d.is_public){toast("Set up and save a public profile first.");openShare();return}
+ var url=location.origin+location.pathname+"?u="+d.username;
+ try{await navigator.clipboard.writeText(url);toast("Link copied: "+url)}catch(e){prompt("Copy your link:",url)}};
 $("pu").oninput=showLink;
 $("pc").onclick=function(){$("ds").close()};
 $("ps").onclick=async function(){
@@ -270,6 +295,13 @@ $("ps").onclick=async function(){
  toast($("pv").checked?"Saved. Your link is live.":"Saved. Your profile is private.");showLink()};
 $("pk").onclick=function(){var t=$("pl").textContent;if(!t){toast("Enter a username first.");return}
  navigator.clipboard.writeText(t).then(function(){toast("Link copied")},function(){toast("Copy the link by hand.")})};
+var LINKEDIN_ON=false; /* set to true once LinkedIn is enabled in Supabase */
+$("li").hidden=!LINKEDIN_ON;
+async function oauth(pv){
+ var r=await sb.auth.signInWithOAuth({provider:pv,options:{redirectTo:location.origin+location.pathname}});
+ if(r.error)msg(r.error.message)}
+$("gg").onclick=function(){oauth("google")};
+$("li").onclick=function(){oauth("linkedin_oidc")};
 function msg(t){$("dam").textContent=t}
 $("da").oncancel=function(e){e.preventDefault()};
 $("si").onclick=async function(){
@@ -279,9 +311,9 @@ $("su").onclick=async function(){
  var r=await sb.auth.signUp({email:$("ae").value.trim(),password:$("ap").value,options:{emailRedirectTo:location.href.split("#")[0]}});
  if(r.error)msg(r.error.message);else if(!r.data.session)msg("Check your email and confirm your address, then sign in.")};
 $("out").onclick=function(){sb.auth.signOut()};
-if(PUB){["add","imp","exp","out","mig","shb"].forEach(function(i){$(i).hidden=true});loadPublic()}else sb.auth.onAuthStateChange(function(ev,s){
+if(PUB){["add","out","mig","shb","stb"].forEach(function(i){$(i).hidden=true});loadPublic()}else sb.auth.onAuthStateChange(function(ev,s){
  setTimeout(function(){
-  user=s?s.user:null;$("out").hidden=!user;$("shb").hidden=!user;$("who").textContent=user?user.email:"";
+  user=s?s.user:null;$("out").hidden=!user;$("shb").hidden=!user;$("stb").hidden=!user;$("who").textContent=user?user.email:"";
   if(user){if($("da").open)$("da").close();checkMig();refresh()}
   else{items=[];render();$("ap").value="";if(!$("da").open)$("da").showModal()}
  },0)});
