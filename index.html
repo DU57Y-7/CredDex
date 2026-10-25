@@ -11,6 +11,7 @@ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:en
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121821;--card:#1b2431;--ink:#e8edf3;--mute:#9aa6b6;--line:#2e3a4b;--acc:#35b9c4;--accink:#08202a;--danger:#f97066}}
 :root[data-theme="dark"]{--bg:#121821;--card:#1b2431;--ink:#e8edf3;--mute:#9aa6b6;--line:#2e3a4b;--acc:#35b9c4;--accink:#08202a;--danger:#f97066}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 "Bricolage Grotesque",system-ui,sans-serif}
 header{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;padding:20px clamp(16px,4vw,40px) 8px}
@@ -80,9 +81,8 @@ dialog h3.sec{margin:14px 0 0;font-size:17px;padding-top:12px;border-top:1px sol
 <body>
 <header>
   <h1>CredDex<small>Your collection of micro-credentials</small></h1>
-  <span class="meta" id="who"></span>
   <button class="btn" id="mig" hidden>Upload this browser’s credentials</button>
-  <button class="btn" id="recb" hidden>See recommended credentials</button>
+  <button class="btn" id="recb" hidden>Recommended Creds</button>
   <button class="btn pri" id="add">Add credential</button>
   <button class="btn" id="shb" hidden>Copy share link</button>
   <button class="btn" id="stb" hidden>Profile &amp; settings</button>
@@ -137,7 +137,10 @@ dialog h3.sec{margin:14px 0 0;font-size:17px;padding-top:12px;border-top:1px sol
   <div class="meta">By continuing you agree to the <a id="tl3" target="_blank" rel="noopener" style="color:var(--acc)">Terms</a> and <a id="tl4" target="_blank" rel="noopener" style="color:var(--acc)">Privacy Policy</a>.</div>
 </div></dialog>
 <dialog id="ds"><h2>Profile &amp; settings</h2><div class="f">
-  <h3 class="sec" style="margin-top:0;border:0;padding:0">Public profile</h3>
+  <h3 class="sec" style="margin-top:0;border:0;padding:0">Account</h3>
+  <label>Email<input id="pem" readonly tabindex="-1" autocomplete="off"></label>
+
+  <h3 class="sec">Public profile</h3>
   <label>Username<input id="pu" maxlength="30" placeholder="dustin" autocomplete="off"></label>
   <div class="meta" id="pa" aria-live="polite"></div>
   <label>Display name (doesn’t need to be unique)<input id="pn" maxlength="60"></label>
@@ -373,7 +376,10 @@ function audience(a){
  else if(/^open\b/i.test(t))t=t.replace(/^open( course)?\s*/i,"Open to anyone ").trim();
  else t="Usually for: "+t;
  return t+(chk?" · not confirmed, check the badge page":"")}
+var PER_CAT=4;
+function hsh(t){var x=7;for(var i=0;i<t.length;i++)x=(x*31+t.charCodeAt(i))>>>0;return x}
 function recs(){
+ var uid=user?user.id:"";
  var byN={},byU={};cat.forEach(function(r){byN[norm(r.name)]=r;byU[urlKey(r.credly_url)]=r});
  var held={},hc={},lad={};
  items.forEach(function(c){
@@ -383,6 +389,8 @@ function recs(){
   var k=c.cat||(m&&m.category);if(k)hc[k]=(hc[k]||0)+1;
   if(m&&m.ladder&&m.rung){var L=lad[m.ladder];if(!L||m.rung>L.rung)lad[m.ladder]={rung:m.rung,name:m.name}}
  });
+ var tg={};items.forEach(function(c){if(c.pe)return;(c.tags||[]).forEach(function(t){t=String(t).trim();if(t.length>=3&&!tg[t.toLowerCase()])tg[t.toLowerCase()]=t})});
+ var tgx=Object.keys(tg).map(function(k){return{t:tg[k],re:new RegExp("(^|[^a-z0-9])"+k.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"([^a-z0-9]|$)","i")}});
  var st=settings||{},goals=st.goals||[],fcats=fieldCats(st.study_field||""),out=[];
  cat.forEach(function(r){
   if(held[r.id]||dismissed[r.id])return;
@@ -392,15 +400,18 @@ function recs(){
   if(goals.indexOf(r.category)>-1){sc+=40;why.push("Matches your goal: "+r.category)}
   if(fcats.indexOf(r.category)>-1){sc+=25;why.push("Fits your field of study")}
   if(hc[r.category]){sc+=Math.min(15,5+hc[r.category]*5);why.push("Builds on your "+r.category+" badges")}
+  var hay=r.name+" "+r.category+" "+r.skills,tm=tgx.filter(function(x){return x.re.test(hay)}).map(function(x){return x.t}).slice(0,3);
+  if(tm.length){sc+=Math.min(24,tm.length*12);why.push("Matches your tags: "+tm.join(", "))}
   if(!hc[r.category]&&starter&&sc>0){sc+=8;why.push("Beginner-friendly place to start")}
   if(!hc[r.category]&&lv==="advanced")sc-=15;
   if(r.rung>1&&!L)sc-=10;
   sc+=aud(r,st)+(starter?3:0);
   if(!why.length)why.push("A starting point in "+r.category);
-  out.push({r:r,sc:sc,why:why.slice(0,3)});
+  out.push({r:r,sc:sc,h:hsh(uid+r.id),why:why.slice(0,3)});
  });
- out.sort(function(a,b){return b.sc-a.sc||a.r.name.localeCompare(b.r.name)});
- var seen={},p=[],o=[];out.forEach(function(x){var k=x.r.category;seen[k]=(seen[k]||0)+1;(seen[k]<=2?p:o).push(x)});
+ /* equal scores are ordered by a stable per-user shuffle, so no provider or alphabet gets the edge */
+ out.sort(function(a,b){return b.sc-a.sc||a.h-b.h});
+ var seen={},p=[],o=[];out.forEach(function(x){var k=x.r.category;seen[k]=(seen[k]||0)+1;(seen[k]<=PER_CAT?p:o).push(x)});
  return p.concat(o);
 }
 function renderRec(){
@@ -410,7 +421,7 @@ function renderRec(){
  var g=$("recgrid"),n=$("recnote");
  if(catErr){n.textContent="Recommendations couldn’t load: "+catErr;g.innerHTML="";$("more").hidden=true;return}
  var has=settings&&(settings.study_field||(settings.goals&&settings.goals.length));
- n.innerHTML=has?"Picked from your field, your goals and the credentials you hold. Tap a badge for the details.":'These are starter suggestions. Add your field and goals in <button class="lnk" id="recp">Profile &amp; settings</button> to get better matches.';
+ n.innerHTML=has?"Picked from your field, goals, tags and the credentials you hold. Tap a badge for the details.":'These are starter suggestions. Add your field and goals in <button class="lnk" id="recp">Profile &amp; settings</button> to get better matches.';
  recList=recs();
  var show=recList.slice(0,recShown);
  g.innerHTML=show.length?show.map(function(x){var r=x.r;
@@ -486,7 +497,7 @@ $("pm").onclick=function(){var t=$("pe").value;if(!t){toast("Enter your username
  navigator.clipboard.writeText(t).then(function(){toast("Embed code copied")},function(){$("pe").select();toast("Press Ctrl+C to copy.")})};
 async function openShare(){
  var r=await sb.from("profiles").select("*").eq("user_id",user.id).maybeSingle(),d=r.data;
- $("pu").value=d?d.username:"";$("pn").value=d&&d.display_name||"";$("pv").checked=d?d.is_public:true;showLink();
+ $("pem").value=user.email||"";$("pu").value=d?d.username:"";$("pn").value=d&&d.display_name||"";$("pv").checked=d?d.is_public:true;showLink();
  var st=settings||{},gl=st.goals||[];
  $("pi").value=st.institution||"";$("pf").value=st.study_field||"";$("pst").value=st.status||"";
  $("pg").innerHTML=allCats().map(function(x){return '<label><input type="checkbox" value="'+esc(x)+'"'+(gl.indexOf(x)>-1?" checked":"")+'> '+esc(x)+'</label>'}).join("");
@@ -532,7 +543,7 @@ $("su").onclick=async function(){
 $("out").onclick=function(){sb.auth.signOut()};
 if(PUB){["add","out","mig","shb","stb","recb"].forEach(function(i){$(i).hidden=true});loadPublic()}else sb.auth.onAuthStateChange(function(ev,s){
  setTimeout(function(){
-  user=s?s.user:null;$("out").hidden=!user;$("shb").hidden=!user;$("stb").hidden=!user;$("who").textContent=user?user.email:"";
+  user=s?s.user:null;$("out").hidden=!user;$("shb").hidden=!user;$("stb").hidden=!user;
   if(user){if($("da").open)$("da").close();checkMig();refresh();if(recUser!==user.id){recUser=user.id;loaded=false;loadRec()}}
   else{items=[];recUser=null;loaded=false;settings=null;dismissed={};cat=[];$("tb").hidden=true;render();renderRec();$("ap").value="";if($("ds").open)$("ds").close();if(!$("da").open)$("da").showModal()}
  },0)});
