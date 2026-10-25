@@ -11,6 +11,7 @@ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:en
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121821;--card:#1b2431;--ink:#e8edf3;--mute:#9aa6b6;--line:#2e3a4b;--acc:#35b9c4;--accink:#08202a;--danger:#f97066}}
 :root[data-theme="dark"]{--bg:#121821;--card:#1b2431;--ink:#e8edf3;--mute:#9aa6b6;--line:#2e3a4b;--acc:#35b9c4;--accink:#08202a;--danger:#f97066}
 *{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 "Bricolage Grotesque",system-ui,sans-serif}
 header{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;padding:20px clamp(16px,4vw,40px) 8px}
 h1{margin:0;font-size:28px;font-weight:800;letter-spacing:-.02em;flex:1 1 auto}
@@ -19,7 +20,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .btn{border:1px solid var(--line);background:var(--card);padding:8px 14px;border-radius:8px;cursor:pointer}
 .btn.pri{background:var(--acc);color:var(--accink);border-color:var(--acc);font-weight:600}
 .btn.del{color:var(--danger)}
-.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.card:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.card:focus-visible,.lnk:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.lnk{background:none;border:0;padding:0;color:var(--acc);text-decoration:underline;cursor:pointer}
 .bar{display:flex;flex-wrap:wrap;gap:10px;padding:8px clamp(16px,4vw,40px) 16px;align-items:center}
 .bar input[type=search],.bar select{padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
 .bar input[type=search]{flex:1 1 200px;min-width:0}
@@ -30,7 +32,10 @@ button,input,select,textarea{font:inherit;color:inherit}
 .fp label:hover{background:var(--bg)}
 .fp .none{padding:8px;color:var(--mute)}
 .fp .clr{width:100%;margin-top:4px}
-.emb header{display:none}.emb body{background:transparent}
+.emb header,.emb .tb,.emb .rec{display:none}.emb body{background:transparent}
+.tb{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:4px clamp(16px,4vw,40px) 8px;padding:10px 14px;border:1px solid var(--acc);border-radius:10px;background:var(--card)}
+.tb span{flex:1 1 260px}
+.tb a{color:var(--acc)}
 main{padding:0 clamp(16px,4vw,40px) 40px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 16px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px}
@@ -41,18 +46,33 @@ main{padding:0 clamp(16px,4vw,40px) 40px}
 .tags{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:4px}
 .tag{font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--mute)}
 .empty{text-align:center;padding:60px 16px;color:var(--mute)}
+.rec{margin-top:28px;padding:8px clamp(16px,4vw,40px) 64px;border-top:1px solid var(--line)}
+.rec:focus{outline:none}
+.rech{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;margin:20px 0 4px}
+.rech h2{margin:0;font-size:24px;font-weight:800;letter-spacing:-.01em}
+.recnote{color:var(--mute);margin:0 0 18px;max-width:70ch}
+.rec .empty{grid-column:1/-1;padding:32px 16px}
+.more{display:flex;gap:12px;align-items:center;justify-content:center;margin-top:20px;color:var(--mute)}
 dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);padding:22px;width:min(480px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto}
 dialog::backdrop{background:rgba(10,15,22,.55)}
 dialog h2{margin:0 0 12px;font-size:22px}
+dialog h3.sec{margin:14px 0 0;font-size:17px;padding-top:12px;border-top:1px solid var(--line)}
 .f{display:grid;gap:12px}
 .f label{display:grid;gap:4px;font-weight:600;font-size:14px}
-.f input,.f textarea{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-weight:400}
+.f input,.f textarea,.f select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-weight:400}
+.f .chk{display:flex;gap:8px;align-items:center;font-weight:400}
+.f .chk input{padding:0}
+.goals{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:2px 12px}
+.goals label{display:flex;gap:8px;align-items:center;font-weight:400;font-size:14px;padding:3px 0}
+.goals input{padding:0}
 .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:6px}
 .dt{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
 .dt .badge{width:160px;height:160px}
 .dt p{margin:4px 0;white-space:pre-wrap}
 .dt a{color:var(--acc)}
-#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s}
+.dt .why{white-space:normal}
+.dt .row{justify-content:center}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:calc(100vw - 24px)}
 #toast.on{opacity:1}
 @media (prefers-reduced-motion:reduce){#toast{transition:none}}
 </style>
@@ -62,12 +82,17 @@ dialog h2{margin:0 0 12px;font-size:22px}
   <h1>CredDex<small>Your collection of micro-credentials</small></h1>
   <span class="meta" id="who"></span>
   <button class="btn" id="mig" hidden>Upload this browser’s credentials</button>
+  <button class="btn" id="recb" hidden>See recommended credentials</button>
   <button class="btn pri" id="add">Add credential</button>
   <button class="btn" id="shb" hidden>Copy share link</button>
-  <button class="btn" id="stb" hidden>Embed &amp; backup</button>
+  <button class="btn" id="stb" hidden>Profile &amp; settings</button>
   <button class="btn" id="out" hidden>Sign out</button>
   <input type="file" id="impf" accept="application/json" hidden>
 </header>
+<div class="tb" id="tb" role="region" aria-label="Updated terms" hidden>
+  <span>We’ve updated our <a id="tl1" target="_blank" rel="noopener">Terms</a> and <a id="tl2" target="_blank" rel="noopener">Privacy Policy</a>. Please read them and agree to keep using CredDex.</span>
+  <button class="btn pri" id="tba">I agree</button>
+</div>
 <div class="bar">
   <input type="search" id="q" placeholder="Search by name or issuer" aria-label="Search credentials">
   <div class="fw"><button class="btn" id="fb" aria-expanded="false">Filter by tag</button><div class="fp" id="fp" hidden></div></div>
@@ -79,7 +104,15 @@ dialog h2{margin:0 0 12px;font-size:22px}
 </div>
 <main><div class="grid" id="grid"></div><div class="empty" id="empty" hidden></div></main>
 
+<section class="rec" id="rec" tabindex="-1" aria-labelledby="rect" hidden>
+  <div class="rech"><h2 id="rect">Recommended credentials</h2><button class="btn" id="top">Back to top</button></div>
+  <p class="recnote" id="recnote"></p>
+  <div class="grid" id="recgrid"></div>
+  <div class="more" id="more" hidden><span id="morec"></span><button class="btn" id="morb">Show more</button></div>
+</section>
+
 <dialog id="dv"><div class="dt" id="dvb"></div></dialog>
+<dialog id="dr"><div class="dt" id="drb"></div></dialog>
 <dialog id="df"><h2 id="dft">Add credential</h2>
 <div class="f">
   <label>Credential name<input id="fn" required maxlength="120"></label>
@@ -89,7 +122,9 @@ dialog h2{margin:0 0 12px;font-size:22px}
   <label>Evidence link<input id="fu" type="url" placeholder="https://"></label>
   <label>Description<textarea id="fx" rows="3" maxlength="600"></textarea></label>
   <label>Tags (separate with commas)<input id="ft" placeholder="Leadership, University"></label>
-  <label style="display:flex;gap:8px;align-items:center;font-weight:400"><input id="fh" type="checkbox"> Hide from my public profile</label>
+  <label>Category (helps with recommendations)<select id="fcat"></select></label>
+  <label class="chk"><input id="fpe" type="checkbox"> Credential from a past event or one-off (like a “2026 trip”). Don’t base suggestions on it.</label>
+  <label class="chk"><input id="fh" type="checkbox"> Hide from my public profile</label>
   <div class="row"><button class="btn" id="fc">Cancel</button><button class="btn pri" id="fs">Save credential</button></div>
 </div></dialog>
 <dialog id="da"><h2>Sign in to CredDex</h2><div class="f">
@@ -99,23 +134,39 @@ dialog h2{margin:0 0 12px;font-size:22px}
   <label>Password<input id="ap" type="password" autocomplete="current-password" minlength="8"></label>
   <div class="meta" id="dam" role="alert"></div>
   <div class="row"><button class="btn" id="su">Create account</button><button class="btn pri" id="si">Sign in</button></div>
+  <div class="meta">By continuing you agree to the <a id="tl3" target="_blank" rel="noopener" style="color:var(--acc)">Terms</a> and <a id="tl4" target="_blank" rel="noopener" style="color:var(--acc)">Privacy Policy</a>.</div>
 </div></dialog>
-<dialog id="ds"><h2>Profile, embed &amp; backup</h2><div class="f">
+<dialog id="ds"><h2>Profile &amp; settings</h2><div class="f">
+  <h3 class="sec" style="margin-top:0;border:0;padding:0">Public profile</h3>
   <label>Username<input id="pu" maxlength="30" placeholder="dustin" autocomplete="off"></label>
   <div class="meta" id="pa" aria-live="polite"></div>
   <label>Display name (doesn’t need to be unique)<input id="pn" maxlength="60"></label>
-  <label style="display:flex;gap:8px;align-items:center;font-weight:400"><input id="pv" type="checkbox"> Make my profile public</label>
+  <label class="chk"><input id="pv" type="checkbox"> Make my profile public</label>
   <div class="meta" id="pl" style="word-break:break-all"></div>
   <div class="row"><button class="btn" id="pk">Copy link</button><button class="btn pri" id="ps">Save profile</button></div>
-  <h3 style="margin:8px 0 0">Embed on your website</h3>
+
+  <h3 class="sec">About you</h3>
+  <div class="meta">Optional. Only used to suggest credentials, and only you can see it.</div>
+  <label>Institution or organisation<input id="pi" maxlength="80" placeholder="Griffith University"></label>
+  <label>Field of study or work<input id="pf" maxlength="80" placeholder="Mechanical engineering"></label>
+  <label>Where are you at?<select id="pst"><option value="">Prefer not to say</option><option>School student</option><option>University student</option><option>Graduate</option><option>Professional</option><option>Other</option></select></label>
+  <div><div style="font-weight:600;font-size:14px;margin-bottom:4px">Goals: what do you want to build skills in?</div><div class="goals" id="pg"></div></div>
+  <div class="row"><button class="btn" id="prh">Reset hidden suggestions</button><button class="btn pri" id="pss">Save about you</button></div>
+
+  <h3 class="sec">Embed on your website</h3>
   <div class="meta">Paste this where you want your credentials to appear. Save your profile first and keep it public.</div>
-  <label>Theme<select id="pt" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-weight:400"><option value="">Match the visitor’s device</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+  <label>Theme<select id="pt"><option value="">Match the visitor’s device</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
   <label>Height (pixels)<input id="ph" type="number" min="200" max="2000" value="620"></label>
   <textarea id="pe" readonly rows="6" style="font:13px/1.4 ui-monospace,monospace;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg)"></textarea>
   <div class="row"><button class="btn pri" id="pm">Copy embed code</button></div>
-  <h3 style="margin:8px 0 0">Backup</h3>
+
+  <h3 class="sec">Backup</h3>
   <div class="meta">Your credentials are saved in your account. Download a copy any time, or restore one.</div>
   <div class="row"><button class="btn" id="imp">Import</button><button class="btn" id="exp">Export</button></div>
+
+  <h3 class="sec">Terms</h3>
+  <div class="meta" id="ptd"></div>
+  <div class="meta"><a id="tl5" target="_blank" rel="noopener" style="color:var(--acc)">Terms</a> · <a id="tl6" target="_blank" rel="noopener" style="color:var(--acc)">Privacy Policy</a></div>
   <div class="row"><button class="btn" id="pc">Close</button></div>
 </div></dialog>
 <div id="toast" role="status"></div>
@@ -124,23 +175,40 @@ dialog h2{margin:0 0 12px;font-size:22px}
 <script>
 (function(){
 var SB_URL="https://yjeqsgzivnxsaniarrjb.supabase.co",SB_KEY="sb_publishable_zza_qcM68oQERB8Saiqfdw_-Vssku-T";
+var MAIL="dustinjmcguire@gmail.com";
 var sb=supabase.createClient(SB_URL,SB_KEY);
 var QS=new URLSearchParams(location.search),PUB=QS.get("u");
 if(QS.get("embed")){document.documentElement.classList.add("emb");var th=QS.get("theme");if(th==="dark"||th==="light")document.documentElement.setAttribute("data-theme",th)}
 var $=function(i){return document.getElementById(i)};
+["tl1","tl3","tl5"].forEach(function(i){$(i).href="creddex-terms.html"});
+["tl2","tl4","tl6"].forEach(function(i){$(i).href="creddex-privacy.html"});
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function toast(m){var t=$("toast");t.textContent=m;t.className="on";clearTimeout(toast.h);toast.h=setTimeout(function(){t.className=""},3200)}
 function hue(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%360;return h}
+function ini(s){
+ var w=String(s||"?").split(/[\s\/]+/).filter(function(x){return /^[A-Za-z0-9]/.test(x)});
+ if(!w.length)return "?";
+ if(/^[A-Z0-9]{2,4}$/.test(w[0]))return w[0];
+ return w.slice(0,2).map(function(x){return x[0]}).join("").toUpperCase();
+}
 function badge(c){
- if(c.img)return '<img class="badge" alt="" src="'+esc(c.img)+'">';
- var h=hue(c.issuer||c.name),ini=(c.issuer||"?").split(/\s+/).filter(Boolean).slice(0,2).map(function(w){return w[0]}).join("").toUpperCase();
- return '<svg class="badge" viewBox="0 0 100 100" aria-hidden="true"><polygon points="50,4 91,27 91,73 50,96 9,73 9,27" fill="hsl('+h+',55%,38%)"/><polygon points="50,12 84,31 84,69 50,88 16,69 16,31" fill="none" stroke="hsl('+h+',60%,80%)" stroke-width="2"/><text x="50" y="58" text-anchor="middle" font-size="26" font-weight="800" fill="#fff" font-family="Bricolage Grotesque,system-ui,sans-serif">'+esc(ini)+'</text></svg>';
+ if(c.img)return '<img class="badge" alt="" referrerpolicy="no-referrer" src="'+esc(c.img)+'" data-i="'+esc(c.issuer||"")+'" data-n="'+esc(c.name||"")+'">';
+ var h=hue(c.issuer||c.name),t=ini(c.issuer||c.name);
+ return '<svg class="badge" viewBox="0 0 100 100" aria-hidden="true"><polygon points="50,4 91,27 91,73 50,96 9,73 9,27" fill="hsl('+h+',55%,38%)"/><polygon points="50,12 84,31 84,69 50,88 16,69 16,31" fill="none" stroke="hsl('+h+',60%,80%)" stroke-width="2"/><text x="50" y="58" text-anchor="middle" font-size="'+(t.length>2?21:26)+'" font-weight="800" fill="#fff" font-family="Bricolage Grotesque,system-ui,sans-serif">'+esc(t)+'</text></svg>';
 }
 function fmt(d){if(!d)return "";var x=new Date(d+"T00:00:00");return isNaN(x)?d:x.toLocaleDateString("en-AU",{month:"short",year:"numeric"})}
+/* if a badge image fails to load (dead link, expired URL), swap in the generated badge */
+document.addEventListener("error",function(e){var t=e.target;
+ if(t&&t.tagName==="IMG"&&t.dataset&&t.dataset.n!==undefined){var d=document.createElement("div");d.innerHTML=badge({issuer:t.dataset.i,name:t.dataset.n});if(d.firstChild)t.replaceWith(d.firstChild)}},true);
 var pubMsg="",items=[],sel={},editing=null,pendingImg="",imgChanged=false,user=null;
+/* recommendations state */
+var CATS=["AI & Machine Learning","CAD & Design","Communication & Service","Cloud","Cyber Security","Data Engineering","Employability & Pathways","Engineering Practice","Finance & Business","Leadership & Mentoring","Manufacturing & Making","Programming & Numerical Computing","Project Management","Risk & Safety","Simulation & Analysis","Software & DevOps","Sustainability & Climate","Teaching & Learning"];
+var cat=[],catErr="",settings=null,dismissed={},recUser=null,loaded=false,recList=[],recShown=12;
 function tagsHtml(c){return(c.tags&&c.tags.length)?'<div class="tags">'+c.tags.map(function(t){return '<span class="tag">'+esc(t)+'</span>'}).join("")+'</div>':""}
 function allTags(){var m={};items.forEach(function(c){(c.tags||[]).forEach(function(t){m[t]=1})});return Object.keys(m).sort(function(a,b){return a.localeCompare(b)})}
 function active(){return Object.keys(sel).filter(function(k){return sel[k]})}
+function allCats(extra){var m={};CATS.forEach(function(x){m[x]=1});cat.forEach(function(r){if(r.category)m[r.category]=1});if(extra)m[extra]=1;return Object.keys(m).sort(function(a,b){return a.localeCompare(b)})}
+function smooth(){return matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth"}
 async function loadPublic(){
  var p=await sb.from("profiles").select("user_id,username,display_name").eq("username",PUB.toLowerCase()).maybeSingle(),s=document.querySelector("h1 small");
  if(p.error||!p.data){pubMsg="This profile doesn’t exist or isn’t public. Check the username in the link.";s.textContent=pubMsg;items=[];render();return}
@@ -154,8 +222,8 @@ async function refresh(owner){
  if(r.error){pubMsg="Couldn’t load credentials: "+r.error.message;toast("Couldn’t load your collection: "+r.error.message);render();return}
  var paths=r.data.filter(function(x){return x.badge_path}).map(function(x){return x.badge_path}),urls={};
  if(paths.length){var s=await sb.storage.from("badges").createSignedUrls(paths,3600);(s.data||[]).forEach(function(u){urls[u.path]=u.signedUrl})}
- items=r.data.map(function(x){return{id:x.id,name:x.name,issuer:x.issuer,date:x.earned_on||"",desc:x.description||"",url:x.evidence_url||"",tags:x.tags||[],path:x.badge_path,hidden:!!x.hidden,img:urls[x.badge_path]||""}});
- render();
+ items=r.data.map(function(x){return{id:x.id,name:x.name,issuer:x.issuer,date:x.earned_on||"",desc:x.description||"",url:x.evidence_url||"",tags:x.tags||[],path:x.badge_path,hidden:!!x.hidden,cat:x.category||"",pe:!!x.past_event,img:urls[x.badge_path]||""}});
+ render();renderRec();
 }
 function render(){
  var q=$("q").value.trim().toLowerCase(),a=active(),s=$("sort").value;
@@ -185,7 +253,7 @@ $("q").oninput=render;$("sort").onchange=render;
 function open(id){
  var c=items.filter(function(x){return x.id===id})[0];if(!c)return;
  var url=/^https?:\/\//i.test(c.url||"")?c.url:"";
- $("dvb").innerHTML=badge(c)+'<h2>'+esc(c.name)+'</h2><div class="meta">'+esc(c.issuer)+(c.date?" · "+esc(fmt(c.date)):"")+'</div>'+(c.desc?'<p>'+esc(c.desc)+'</p>':"")+tagsHtml(c)+
+ $("dvb").innerHTML=badge(c)+'<h2>'+esc(c.name)+'</h2><div class="meta">'+esc(c.issuer)+(c.date?" · "+esc(fmt(c.date)):"")+'</div>'+(c.pe?'<div class="meta">Past event or one-off</div>':"")+(c.desc?'<p>'+esc(c.desc)+'</p>':"")+tagsHtml(c)+
   (url?'<p><a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">View evidence</a></p>':"")+
   '<div class="row">'+(PUB?"":'<button class="btn del" data-a="del" data-id="'+esc(id)+'">Delete</button><button class="btn" data-a="edit" data-id="'+esc(id)+'">Edit</button>')+'<button class="btn pri" data-a="close">Close</button></div>';
  $("dv").showModal();
@@ -203,11 +271,15 @@ $("dv").onclick=async function(e){
   if(c&&c.path)await sb.storage.from("badges").remove([c.path]);
   $("dv").close();await refresh();toast("Credential deleted")}
 };
+function fillCats(cur){
+ $("fcat").innerHTML='<option value="">None / not sure</option>'+allCats(cur).map(function(x){return '<option>'+esc(x)+'</option>'}).join("");
+ $("fcat").value=cur||"";
+}
 function form(id){
  editing=id||null;imgChanged=false;var c=id?items.filter(function(x){return x.id===id})[0]:{};
  $("dft").textContent=id?"Edit credential":"Add credential";
  $("fn").value=c.name||"";$("fi").value=c.issuer||"";$("fd").value=c.date||"";$("fu").value=c.url||"";$("fx").value=c.desc||"";$("ft").value=(c.tags||[]).join(", ");$("fimg").value="";
- pendingImg=c.img||"";$("fh").checked=!!c.hidden;$("df").showModal();
+ pendingImg=c.img||"";$("fh").checked=!!c.hidden;$("fpe").checked=!!c.pe;fillCats(c.cat||"");$("df").showModal();
 }
 $("add").onclick=function(){form()};
 $("fc").onclick=function(){$("df").close()};
@@ -230,7 +302,7 @@ $("fs").onclick=async function(){
  var btn=this;btn.disabled=true;
  var cur=editing?items.filter(function(x){return x.id===editing})[0]:null,path=cur?cur.path||null:null;
  if(imgChanged&&pendingImg){var old=path;path=await upload(pendingImg);if(!path)toast("Badge image didn’t upload.");else if(old)await sb.storage.from("badges").remove([old])}
- var row={name:n,issuer:i,earned_on:$("fd").value||null,description:$("fx").value.trim()||null,evidence_url:u||null,tags:tags,badge_path:path,hidden:$("fh").checked};
+ var row={name:n,issuer:i,earned_on:$("fd").value||null,description:$("fx").value.trim()||null,evidence_url:u||null,tags:tags,badge_path:path,hidden:$("fh").checked,category:$("fcat").value||null,past_event:$("fpe").checked};
  var r=editing?await sb.from("credentials").update(Object.assign(row,{updated_at:new Date().toISOString()})).eq("id",editing):await sb.from("credentials").insert(row);
  btn.disabled=false;
  if(r.error){toast("Couldn’t save: "+r.error.message);return}
@@ -240,7 +312,7 @@ async function addMany(list){
  var n=0;
  for(var c of list){if(!c||!c.name||!c.issuer)continue;
   var p=c.img&&String(c.img).indexOf("data:")===0?await upload(c.img):null;
-  var r=await sb.from("credentials").insert({name:String(c.name).slice(0,120),issuer:String(c.issuer).slice(0,120),earned_on:c.date||null,description:c.desc?String(c.desc).slice(0,600):null,evidence_url:/^https?:\/\//i.test(c.url||"")?c.url:null,tags:Array.isArray(c.tags)?c.tags:[],badge_path:p});
+  var r=await sb.from("credentials").insert({name:String(c.name).slice(0,120),issuer:String(c.issuer).slice(0,120),earned_on:c.date||null,description:c.desc?String(c.desc).slice(0,600):null,evidence_url:/^https?:\/\//i.test(c.url||"")?c.url:null,tags:Array.isArray(c.tags)?c.tags:[],badge_path:p,category:typeof c.category==="string"&&c.category?c.category.slice(0,80):null,past_event:!!c.past_event});
   if(!r.error)n++}
  await refresh();return n;
 }
@@ -248,7 +320,7 @@ $("exp").onclick=async function(){
  toast("Preparing backup…");var out=[];
  for(var c of items){var img="";
   if(c.img){try{var b=await(await fetch(c.img)).blob();img=await new Promise(function(res){var f=new FileReader();f.onload=function(){res(f.result)};f.readAsDataURL(b)})}catch(e){}}
-  out.push({name:c.name,issuer:c.issuer,date:c.date,desc:c.desc,url:c.url,tags:c.tags,img:img})}
+  out.push({name:c.name,issuer:c.issuer,date:c.date,desc:c.desc,url:c.url,tags:c.tags,category:c.cat,past_event:c.pe,img:img})}
  var b2=new Blob([JSON.stringify({app:"creddex",version:1,credentials:out},null,2)],{type:"application/json"});
  var a=document.createElement("a");a.href=URL.createObjectURL(b2);a.download="creddex-backup.json";document.body.appendChild(a);a.click();a.remove();
  toast("Backup downloaded, including badge images");
@@ -268,6 +340,136 @@ $("mig").onclick=async function(){
  try{localStorage.setItem("creddex:migrated:"+user.id,"1")}catch(e){}
  $("mig").hidden=true;toast("Uploaded "+n+" credentials from this browser");
 };
+
+/* ---------- recommendations ---------- */
+function norm(s){return String(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"")}
+function urlKey(u){return String(u||"").toLowerCase().replace(/^https?:\/\/(www\.)?/,"").split(/[?#]/)[0].replace(/\/+$/,"")}
+var FIELDS=[
+ [/engineer/i,["CAD & Design","Simulation & Analysis","Programming & Numerical Computing","Engineering Practice","Project Management","Risk & Safety"]],
+ [/comput|software|information tech|\bit\b|informatics|data/i,["Software & DevOps","Cloud","AI & Machine Learning","Data Engineering","Cyber Security","Programming & Numerical Computing"]],
+ [/business|commerce|financ|account|econom|manage/i,["Finance & Business","Leadership & Mentoring","Project Management","Communication & Service"]],
+ [/educat|teach/i,["Teaching & Learning","Communication & Service"]],
+ [/environment|sustainab|climate|science/i,["Sustainability & Climate","Employability & Pathways"]],
+ [/design|architect|manufactur/i,["CAD & Design","Manufacturing & Making"]]
+];
+function fieldCats(f){var o=[];FIELDS.forEach(function(x){if(x[0].test(f))x[1].forEach(function(k){if(o.indexOf(k)<0)o.push(k)})});return o}
+/* Eligibility is a hint, not a rule: a mismatch only lowers the rank, it never hides a badge. */
+function aud(r,st){
+ var a=String(r.access||""),inst=String(st.institution||"").toLowerCase(),fld=String(st.study_field||"").toLowerCase(),sts=st.status||"";
+ if(/staff|educators/i.test(a))return sts==="Professional"?0:-30;
+ if(/griffith/i.test(a)){
+  if(inst.indexOf("griffith")<0)return -30;
+  if(/engineering/i.test(a)&&fld.indexOf("engineer")<0)return -30;
+  if(/science/i.test(a)&&fld.indexOf("science")<0)return -30;
+  return 0}
+ if(/year 11/i.test(a))return sts==="School student"?0:-30;
+ if(/apprentice/i.test(a))return inst.indexOf("ibm")>-1?0:-30;
+ if(/public sector|participants/i.test(a))return -30;
+ return 0}
+function audience(a){
+ if(!a)return "";
+ var chk=/\(check page\)/i.test(a),t=a.replace(/\s*\(check page\)/i,"").trim();
+ if(/^open$/i.test(t))t="Open to anyone";
+ else if(/^open\b/i.test(t))t=t.replace(/^open( course)?\s*/i,"Open to anyone ").trim();
+ else t="Usually for: "+t;
+ return t+(chk?" · not confirmed, check the badge page":"")}
+function recs(){
+ var byN={},byU={};cat.forEach(function(r){byN[norm(r.name)]=r;byU[urlKey(r.credly_url)]=r});
+ var held={},hc={},lad={};
+ items.forEach(function(c){
+  var m=byN[norm(c.name)]||(c.url&&byU[urlKey(c.url)])||null;
+  if(m)held[m.id]=1;
+  if(c.pe)return;
+  var k=c.cat||(m&&m.category);if(k)hc[k]=(hc[k]||0)+1;
+  if(m&&m.ladder&&m.rung){var L=lad[m.ladder];if(!L||m.rung>L.rung)lad[m.ladder]={rung:m.rung,name:m.name}}
+ });
+ var st=settings||{},goals=st.goals||[],fcats=fieldCats(st.study_field||""),out=[];
+ cat.forEach(function(r){
+  if(held[r.id]||dismissed[r.id])return;
+  var sc=0,why=[],lv=String(r.level||"").toLowerCase(),starter=(lv==="foundational"||lv==="entry"||r.rung===1)&&!/prerequisite|needs/i.test(r.access||""),L=r.ladder&&lad[r.ladder];
+  if(L&&r.rung===L.rung+1){sc+=50;why.push("Next step after "+L.name)}
+  else if(L&&r.rung>L.rung+1){sc+=20;why.push("Later step on the same path as "+L.name)}
+  if(goals.indexOf(r.category)>-1){sc+=40;why.push("Matches your goal: "+r.category)}
+  if(fcats.indexOf(r.category)>-1){sc+=25;why.push("Fits your field of study")}
+  if(hc[r.category]){sc+=Math.min(15,5+hc[r.category]*5);why.push("Builds on your "+r.category+" badges")}
+  if(!hc[r.category]&&starter&&sc>0){sc+=8;why.push("Beginner-friendly place to start")}
+  if(!hc[r.category]&&lv==="advanced")sc-=15;
+  if(r.rung>1&&!L)sc-=10;
+  sc+=aud(r,st)+(starter?3:0);
+  if(!why.length)why.push("A starting point in "+r.category);
+  out.push({r:r,sc:sc,why:why.slice(0,3)});
+ });
+ out.sort(function(a,b){return b.sc-a.sc||a.r.name.localeCompare(b.r.name)});
+ var seen={},p=[],o=[];out.forEach(function(x){var k=x.r.category;seen[k]=(seen[k]||0)+1;(seen[k]<=2?p:o).push(x)});
+ return p.concat(o);
+}
+function renderRec(){
+ var sec=$("rec");
+ if(PUB||!user||!loaded){sec.hidden=true;$("recb").hidden=true;return}
+ sec.hidden=false;$("recb").hidden=false;
+ var g=$("recgrid"),n=$("recnote");
+ if(catErr){n.textContent="Recommendations couldn’t load: "+catErr;g.innerHTML="";$("more").hidden=true;return}
+ var has=settings&&(settings.study_field||(settings.goals&&settings.goals.length));
+ n.innerHTML=has?"Picked from your field, your goals and the credentials you hold. Tap a badge for the details.":'These are starter suggestions. Add your field and goals in <button class="lnk" id="recp">Profile &amp; settings</button> to get better matches.';
+ recList=recs();
+ var show=recList.slice(0,recShown);
+ g.innerHTML=show.length?show.map(function(x){var r=x.r;
+  return '<div class="card" tabindex="0" role="button" data-id="'+esc(r.id)+'">'+badge({issuer:r.issuer,name:r.name,img:/^https:\/\//i.test(r.image_url||"")?r.image_url:""})+'<h3>'+esc(r.name)+'</h3><div class="meta">'+esc(r.issuer)+'</div></div>'}).join(""):'<div class="empty">No suggestions left right now. Check back after adding more goals or credentials.</div>';
+ $("more").hidden=recList.length<=recShown;
+ $("morec").textContent="Showing "+Math.min(recShown,recList.length)+" of "+recList.length;
+}
+$("recnote").onclick=function(e){if(e.target.id==="recp")openShare()};
+$("morb").onclick=function(){recShown+=12;renderRec()};
+$("recb").onclick=function(){var s=$("rec");s.scrollIntoView({behavior:smooth(),block:"start"});s.focus({preventScroll:true})};
+$("top").onclick=function(){window.scrollTo({top:0,behavior:smooth()});$("recb").focus({preventScroll:true})};
+async function loadRec(){
+ var me=user.id;
+ var c=await sb.from("catalogue").select("*").order("name");
+ var s=await sb.from("user_settings").select("*").eq("user_id",me).maybeSingle();
+ var d=await sb.from("catalogue_dismissals").select("catalogue_id,reason").eq("user_id",me);
+ if(!user||user.id!==me)return;
+ if(c.error){catErr=c.error.message;cat=[]}else{catErr="";cat=c.data||[]}
+ settings=s.data||null;
+ dismissed={};(d.data||[]).forEach(function(x){dismissed[x.catalogue_id]=x.reason||"x"});
+ loaded=true;
+ $("tb").hidden=!!(settings&&settings.terms_accepted_at);
+ renderRec();
+}
+function openRec(id){
+ var x=recList.filter(function(y){return y.r.id===id})[0];if(!x)return;
+ var r=x.r,facts=[r.level,r.time,r.cost].filter(Boolean).join(" · "),url=/^https?:\/\//i.test(r.credly_url||"")?r.credly_url:"",
+  sk=String(r.skills||"").split(";").map(function(t){return t.trim()}).filter(Boolean),au=audience(r.access),
+  mail="mailto:"+MAIL+"?subject="+encodeURIComponent("CredDex catalogue issue: "+r.name)+"&body="+encodeURIComponent("Badge: "+r.name+"\nID: "+r.id+"\nLink: "+r.credly_url+"\n\nWhat’s wrong:\n");
+ $("drb").innerHTML=badge({issuer:r.issuer,name:r.name,img:/^https:\/\//i.test(r.image_url||"")?r.image_url:""})+'<h2>'+esc(r.name)+'</h2><div class="meta">'+esc(r.issuer)+(r.badge_type?" · "+esc(r.badge_type):"")+'</div>'+(facts?'<div class="meta">'+esc(facts)+'</div>':"")+
+  (r.summary?'<p>'+esc(r.summary)+'</p>':"")+
+  (sk.length?'<div class="tags">'+sk.map(function(t){return '<span class="tag">'+esc(t)+'</span>'}).join("")+'</div>':"")+
+  '<p class="why"><strong>Why you’re seeing this:</strong> '+x.why.map(esc).join("; ")+'.</p>'+
+  (au?'<div class="meta">'+esc(au)+'</div>':"")+
+  (r.checked?'<div class="meta">Last checked '+esc(r.checked)+'</div>':"")+
+  (url?'<p><a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer"><strong>Go to the badge page</strong></a></p>':"")+
+  '<div class="row" id="drr"><button class="btn" data-a="nfm">Not for me</button><a class="btn" href="'+esc(mail)+'" style="text-decoration:none;color:inherit">Report a problem</a><button class="btn pri" data-a="close">Close</button></div>'+
+  '<div class="row" id="nfm" hidden><span class="meta">Hide it because:</span><button class="btn" data-a="dis" data-id="'+esc(r.id)+'" data-r="not_eligible">I’m not eligible</button><button class="btn" data-a="dis" data-id="'+esc(r.id)+'" data-r="not_interested">Not interested</button><button class="btn" data-a="dis" data-id="'+esc(r.id)+'" data-r="">Just hide it</button></div>';
+ $("dr").showModal();
+}
+async function dismiss(id,reason){
+ var r=await sb.from("catalogue_dismissals").upsert({user_id:user.id,catalogue_id:id,reason:reason||null},{onConflict:"user_id,catalogue_id"});
+ if(r.error){toast("Couldn’t hide it: "+r.error.message);return}
+ dismissed[id]=reason||"x";$("dr").close();renderRec();toast("Hidden. It won’t come back.")}
+$("recgrid").onclick=function(e){var c=e.target.closest(".card");if(c)openRec(c.dataset.id)};
+$("recgrid").onkeydown=function(e){if(e.key==="Enter"||e.key===" "){var c=e.target.closest(".card");if(c){e.preventDefault();openRec(c.dataset.id)}}};
+$("dr").onclick=function(e){
+ var d=e.target.dataset||{};
+ if(d.a==="close"||e.target===$("dr"))$("dr").close();
+ if(d.a==="nfm"){$("drr").hidden=true;$("nfm").hidden=false}
+ if(d.a==="dis")dismiss(d.id,d.r||null);
+};
+$("tba").onclick=async function(){
+ var now=new Date().toISOString();
+ var r=await sb.from("user_settings").upsert({user_id:user.id,terms_accepted_at:now,updated_at:now},{onConflict:"user_id"});
+ if(r.error){toast("Couldn’t save that: "+r.error.message);return}
+ settings=Object.assign(settings||{},{terms_accepted_at:now});$("tb").hidden=true;toast("Thanks, saved.")};
+
+/* ---------- profile & settings ---------- */
 function showLink(){
  var u=$("pu").value.trim().toLowerCase().replace(/[^a-z0-9_]/g,""),base=location.origin+location.pathname,th=$("pt").value,ht=Math.min(2000,Math.max(200,parseInt($("ph").value,10)||620));
  $("pl").textContent=u?base+"?u="+u:"";
@@ -284,14 +486,18 @@ $("pm").onclick=function(){var t=$("pe").value;if(!t){toast("Enter your username
  navigator.clipboard.writeText(t).then(function(){toast("Embed code copied")},function(){$("pe").select();toast("Press Ctrl+C to copy.")})};
 async function openShare(){
  var r=await sb.from("profiles").select("*").eq("user_id",user.id).maybeSingle(),d=r.data;
- $("pu").value=d?d.username:"";$("pn").value=d&&d.display_name||"";$("pv").checked=d?d.is_public:true;showLink();$("ds").showModal()}
+ $("pu").value=d?d.username:"";$("pn").value=d&&d.display_name||"";$("pv").checked=d?d.is_public:true;showLink();
+ var st=settings||{},gl=st.goals||[];
+ $("pi").value=st.institution||"";$("pf").value=st.study_field||"";$("pst").value=st.status||"";
+ $("pg").innerHTML=allCats().map(function(x){return '<label><input type="checkbox" value="'+esc(x)+'"'+(gl.indexOf(x)>-1?" checked":"")+'> '+esc(x)+'</label>'}).join("");
+ $("ptd").textContent=st.terms_accepted_at?"You agreed to the current terms on "+new Date(st.terms_accepted_at).toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"})+".":"You haven’t agreed to the current terms yet.";
+ if(!$("ds").open)$("ds").showModal()}
 $("stb").onclick=openShare;
 $("shb").onclick=async function(){
  var r=await sb.from("profiles").select("username,is_public").eq("user_id",user.id).maybeSingle(),d=r.data;
  if(!d||!d.is_public){toast("Set up and save a public profile first.");openShare();return}
  var url=location.origin+location.pathname+"?u="+d.username;
  try{await navigator.clipboard.writeText(url);toast("Link copied: "+url)}catch(e){prompt("Copy your link:",url)}};
-$("pu").oninput=showLink;
 $("pc").onclick=function(){$("ds").close()};
 $("ps").onclick=async function(){
  var u=$("pu").value.trim().toLowerCase();
@@ -299,8 +505,18 @@ $("ps").onclick=async function(){
  var r=await sb.from("profiles").upsert({user_id:user.id,username:u,display_name:$("pn").value.trim()||null,is_public:$("pv").checked},{onConflict:"user_id"});
  if(r.error){toast(r.error.code==="23505"?"That username is taken. Try another.":r.error.code==="23514"?"That username isn’t allowed. Try another.":"Couldn’t save: "+r.error.message);return}
  toast($("pv").checked?"Saved. Your link is live.":"Saved. Your profile is private.");showLink()};
-$("pk").onclick=function(){var t=$("pl").textContent;if(!t){toast("Enter a username first.");return}
- navigator.clipboard.writeText(t).then(function(){toast("Link copied")},function(){toast("Copy the link by hand.")})};
+$("pss").onclick=async function(){
+ var goals=[].slice.call($("pg").querySelectorAll("input:checked")).map(function(i){return i.value});
+ var row={user_id:user.id,institution:$("pi").value.trim()||null,study_field:$("pf").value.trim()||null,status:$("pst").value||null,goals:goals,updated_at:new Date().toISOString()};
+ var r=await sb.from("user_settings").upsert(row,{onConflict:"user_id"});
+ if(r.error){toast("Couldn’t save: "+r.error.message);return}
+ settings=Object.assign(settings||{},row);recShown=12;renderRec();toast("Saved. Suggestions updated.")};
+$("prh").onclick=async function(){
+ var r=await sb.from("catalogue_dismissals").delete().eq("user_id",user.id);
+ if(r.error){toast("Couldn’t reset: "+r.error.message);return}
+ dismissed={};renderRec();toast("Hidden suggestions are back.")};
+
+/* ---------- sign in ---------- */
 async function oauth(pv){
  var r=await sb.auth.signInWithOAuth({provider:pv,options:{redirectTo:location.origin+location.pathname}});
  if(r.error)msg(r.error.message)}
@@ -314,11 +530,11 @@ $("su").onclick=async function(){
  var r=await sb.auth.signUp({email:$("ae").value.trim(),password:$("ap").value,options:{emailRedirectTo:location.href.split("#")[0]}});
  if(r.error)msg(r.error.message);else if(!r.data.session)msg("Check your email and confirm your address, then sign in.")};
 $("out").onclick=function(){sb.auth.signOut()};
-if(PUB){["add","out","mig","shb","stb"].forEach(function(i){$(i).hidden=true});loadPublic()}else sb.auth.onAuthStateChange(function(ev,s){
+if(PUB){["add","out","mig","shb","stb","recb"].forEach(function(i){$(i).hidden=true});loadPublic()}else sb.auth.onAuthStateChange(function(ev,s){
  setTimeout(function(){
   user=s?s.user:null;$("out").hidden=!user;$("shb").hidden=!user;$("stb").hidden=!user;$("who").textContent=user?user.email:"";
-  if(user){if($("da").open)$("da").close();checkMig();refresh()}
-  else{items=[];render();$("ap").value="";if(!$("da").open)$("da").showModal()}
+  if(user){if($("da").open)$("da").close();checkMig();refresh();if(recUser!==user.id){recUser=user.id;loaded=false;loadRec()}}
+  else{items=[];recUser=null;loaded=false;settings=null;dismissed={};cat=[];$("tb").hidden=true;render();renderRec();$("ap").value="";if($("ds").open)$("ds").close();if(!$("da").open)$("da").showModal()}
  },0)});
 })();
 </script>
