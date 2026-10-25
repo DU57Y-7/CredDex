@@ -94,7 +94,6 @@ dialog h2{margin:0 0 12px;font-size:22px}
 </div></dialog>
 <dialog id="da"><h2>Sign in to CredDex</h2><div class="f">
   <button class="btn" id="gg">Continue with Google</button>
-  <button class="btn" id="li" hidden>Continue with LinkedIn</button>
   <div class="meta" style="text-align:center">or use email</div>
   <label>Email<input id="ae" type="email" autocomplete="email"></label>
   <label>Password<input id="ap" type="password" autocomplete="current-password" minlength="8"></label>
@@ -103,7 +102,8 @@ dialog h2{margin:0 0 12px;font-size:22px}
 </div></dialog>
 <dialog id="ds"><h2>Profile, embed &amp; backup</h2><div class="f">
   <label>Username<input id="pu" maxlength="30" placeholder="dustin" autocomplete="off"></label>
-  <label>Display name<input id="pn" maxlength="60"></label>
+  <div class="meta" id="pa" aria-live="polite"></div>
+  <label>Display name (doesn’t need to be unique)<input id="pn" maxlength="60"></label>
   <label style="display:flex;gap:8px;align-items:center;font-weight:400"><input id="pv" type="checkbox"> Make my profile public</label>
   <div class="meta" id="pl" style="word-break:break-all"></div>
   <div class="row"><button class="btn" id="pk">Copy link</button><button class="btn pri" id="ps">Save profile</button></div>
@@ -274,6 +274,12 @@ function showLink(){
  $("pe").value=u?'<iframe\n  src="'+base+'?u='+u+'&embed=1'+(th?'&theme='+th:'')+'"\n  title="Credentials of '+u+'"\n  loading="lazy"\n  style="width:100%;height:'+ht+'px;border:0"></iframe>':"";
 }
 $("pt").onchange=showLink;$("ph").oninput=showLink;
+var pTimer;
+$("pu").addEventListener("input",function(){
+ clearTimeout(pTimer);var u=this.value.trim().toLowerCase();$("pa").textContent="";
+ if(!u)return;
+ if(!/^[a-z0-9_]{3,30}$/.test(u)){$("pa").textContent="Use 3–30 lowercase letters, numbers or underscores.";return}
+ pTimer=setTimeout(async function(){var r=await sb.rpc("username_available",{u:u});if(!r.error)$("pa").textContent=r.data?"✓ Available":"✗ Taken or reserved"},400)});
 $("pm").onclick=function(){var t=$("pe").value;if(!t){toast("Enter your username first.");return}
  navigator.clipboard.writeText(t).then(function(){toast("Embed code copied")},function(){$("pe").select();toast("Press Ctrl+C to copy.")})};
 async function openShare(){
@@ -291,17 +297,14 @@ $("ps").onclick=async function(){
  var u=$("pu").value.trim().toLowerCase();
  if(!/^[a-z0-9_]{3,30}$/.test(u)){toast("Username needs 3–30 letters, numbers or underscores.");return}
  var r=await sb.from("profiles").upsert({user_id:user.id,username:u,display_name:$("pn").value.trim()||null,is_public:$("pv").checked},{onConflict:"user_id"});
- if(r.error){toast(r.error.code==="23505"?"That username is taken. Try another.":"Couldn’t save: "+r.error.message);return}
+ if(r.error){toast(r.error.code==="23505"?"That username is taken. Try another.":r.error.code==="23514"?"That username isn’t allowed. Try another.":"Couldn’t save: "+r.error.message);return}
  toast($("pv").checked?"Saved. Your link is live.":"Saved. Your profile is private.");showLink()};
 $("pk").onclick=function(){var t=$("pl").textContent;if(!t){toast("Enter a username first.");return}
  navigator.clipboard.writeText(t).then(function(){toast("Link copied")},function(){toast("Copy the link by hand.")})};
-var LINKEDIN_ON=false; /* set to true once LinkedIn is enabled in Supabase */
-$("li").hidden=!LINKEDIN_ON;
 async function oauth(pv){
  var r=await sb.auth.signInWithOAuth({provider:pv,options:{redirectTo:location.origin+location.pathname}});
  if(r.error)msg(r.error.message)}
 $("gg").onclick=function(){oauth("google")};
-$("li").onclick=function(){oauth("linkedin_oidc")};
 function msg(t){$("dam").textContent=t}
 $("da").oncancel=function(e){e.preventDefault()};
 $("si").onclick=async function(){
