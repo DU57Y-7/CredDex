@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Badge details · CredDex</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="cd.css">
+</head>
+<body>
+<header>
+  <h1><a href="index.html">CredDex</a><small>Badge details</small></h1>
+  <div class="acts"><a class="btn" href="index.html">Browse credentials</a></div>
+</header>
+<div class="vwrap">
+  <div class="vcard" id="v"><p class="muted">Loading…</p></div>
+</div>
+<footer class="foot" id="ft2"></footer>
+<div id="toast" role="status"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="cd.js"></script>
+<script>
+(function(){
+var $=CD.$,esc=CD.esc,sb=CD.sb;
+$("ft2").innerHTML=CD.footer();
+async function load(){
+ var id=new URLSearchParams(location.search).get("t"),v=$("v");
+ if(!/^[0-9a-f-]{36}$/i.test(id||"")){v.innerHTML='<h2>Badge not found</h2><p class="muted">Check the link and try again.</p>';return}
+ var r=await sb.rpc("public_template",{p_id:id});
+ if(r.error||!r.data||!r.data.length){v.innerHTML='<h2>Badge not found</h2><p class="muted">This badge doesn’t exist or is no longer available.</p>';return}
+ var b=r.data[0],sk=String(b.skills||"").split(";").map(function(s){return s.trim()}).filter(Boolean),w=CD.safeUrl(b.org_website),
+  to=/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(b.contact_email||"")?b.contact_email:CD.MAIL,
+  mail="mailto:"+to+"?subject="+encodeURIComponent("Question about the "+b.name+" badge")+(to===CD.MAIL?"&body="+encodeURIComponent("I’d like to contact "+b.org_name+" about the "+b.name+" badge.\n"):"");
+ document.title=b.name+" · CredDex";
+ v.innerHTML='<div class="dt">'+CD.badge({issuer:b.org_name,name:b.name,img:CD.artUrl(b.image_path)})+'<h2>'+esc(b.name)+'</h2>'+
+  '<div class="meta">Issued by '+(w?'<a href="'+esc(w)+'" target="_blank" rel="noopener noreferrer">'+esc(b.org_name)+'</a>':esc(b.org_name))+' through CredDex</div>'+
+  (b.description?'<p>'+esc(b.description)+'</p>':"")+
+  (b.criteria?'<div class="panel" style="text-align:left;width:100%"><h3>Criteria</h3><div style="white-space:pre-wrap">'+esc(b.criteria)+'</div></div>':"")+
+  (sk.length?'<div class="tags">'+sk.map(function(s){return '<span class="tag">'+esc(s)+'</span>'}).join("")+'</div>':"")+
+  (b.category||b.level?'<div class="meta">'+esc([b.category,b.level].filter(Boolean).join(" · "))+'</div>':"")+
+  (b.org_description?'<div class="panel" style="text-align:left;width:100%"><h3>About '+esc(b.org_name)+'</h3><div style="white-space:pre-wrap">'+esc(b.org_description)+'</div></div>':"")+
+  '<div class="row"><a class="btn pri" href="'+esc(mail)+'">Contact '+esc(b.org_name)+'</a></div>'+
+  '<p class="meta">To check a specific badge someone has shown you, open the verification link they gave you.</p></div>'}
+load();
+})();
+</script>
+</body>
+</html>

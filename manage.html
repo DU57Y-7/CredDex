@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Manage badges · CredDex</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="cd.css">
+</head>
+<body>
+<header>
+  <h1><a href="index.html">CredDex</a><small>Manage and issue badges</small></h1>
+  <div class="acts"><a class="btn" href="app.html">My CredDex</a></div>
+</header>
+<div class="pw">
+  <div class="panel" id="gate" hidden><h2>Sign in first</h2><p class="muted">Sign in to CredDex, then come back to this page.</p><a class="btn pri" href="app.html">Sign in</a></div>
+  <div class="panel" id="none" hidden><h2>No organisation yet</h2><p class="muted">Your account isn’t linked to an organisation. If you’d like to issue badges for a school, club or team, get in touch and we’ll set it up.</p><a class="btn pri" href="mailto:dustinjmcguire@gmail.com?subject=CredDex%20badges%20for%20our%20organisation">Email us</a></div>
+
+  <div id="wrap" hidden>
+    <div class="panel f"><label>Organisation<select id="org"></select></label></div>
+    <div class="tabs" role="tablist" id="tabs"></div>
+
+    <section id="t-issue" class="panel" hidden>
+      <h2>Issue a badge</h2>
+      <div class="f">
+        <label>Badge<select id="itpl"></select></label>
+        <div class="muted" id="inone" hidden>No badges are set up for this organisation yet. Get in touch and we’ll create your first one.</div>
+        <label>Recipient emails (one per line, or separated by commas)<textarea id="iem" rows="5" placeholder="student@example.com"></textarea></label>
+        <label>Expiry date (optional)<input type="date" id="iex"></label>
+        <label>Note (optional, only your organisation can see it)<input id="ino" maxlength="300"></label>
+        <div class="row"><button class="btn pri" id="igo">Issue badges</button></div>
+        <div id="ires" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section id="t-issued" class="panel" hidden>
+      <h2>Issued badges</h2>
+      <div class="f">
+        <label>Badge<select id="ftpl"></select></label>
+        <label>Search by email<input type="search" id="fq" placeholder="Part of an email address"></label>
+      </div>
+      <div id="il"></div>
+      <div class="row"><button class="btn" id="ilm" hidden>Load more</button></div>
+    </section>
+
+    <section id="t-orgs" hidden>
+      <div class="panel"><h2>Organisations</h2><div id="ol"></div></div>
+      <div class="panel"><h3>Add an organisation</h3><div class="f">
+        <label>Name<input id="on" maxlength="120"></label>
+        <label>Website (optional)<input id="ow" type="url" placeholder="https://"></label>
+        <label>Contact email shown on badge pages (optional)<input id="oe" type="email" placeholder="hello@school.edu.au"></label>
+        <label>About (optional)<textarea id="od" rows="2" maxlength="400"></textarea></label>
+        <div class="row"><button class="btn pri" id="oc">Add organisation</button></div></div></div>
+      <div class="panel"><h3>People who can issue for <span id="mon"></span></h3>
+        <div id="ml"></div>
+        <div class="f" style="margin-top:10px">
+          <label>Their CredDex email (they need to have signed in once)<input id="me" type="email"></label>
+          <label>Role<select id="mr"><option value="issuer">Issuer</option><option value="owner">Owner</option></select></label>
+          <div class="row"><button class="btn pri" id="ma">Add person</button></div></div></div>
+    </section>
+
+    <section id="t-tpls" hidden>
+      <div class="panel"><h2>Badge templates for <span id="ton"></span></h2><div id="tl"></div></div>
+      <div class="panel"><h3 id="tft">Create a badge</h3><div class="f">
+        <label>Badge name<input id="tn" maxlength="120"></label>
+        <label>Description<textarea id="td" rows="3" maxlength="600"></textarea></label>
+        <label>What the recipient did to earn it<textarea id="tc" rows="2" maxlength="1000"></textarea></label>
+        <label>Skills (separate with semicolons)<input id="ts" placeholder="Teamwork; Leadership"></label>
+        <label>Topic<select id="tcat"></select></label>
+        <label>Level<select id="tlv"><option value="">Not set</option><option>Foundational</option><option>Intermediate</option><option>Advanced</option></select></label>
+        <label>Artwork (PNG, JPG or WebP)<input id="tfile" type="file" accept="image/*"></label>
+        <label class="chk"><input id="tli" type="checkbox"> Show on the CredDex home page</label>
+        <label class="chk"><input id="tpd" type="checkbox"> Setup fee paid</label>
+        <label>Setup notes (private)<input id="tno" maxlength="300"></label>
+        <div class="row"><button class="btn" id="tcx" hidden>Cancel edit</button><button class="btn pri" id="tsv">Save badge</button></div></div></div>
+    </section>
+  </div>
+</div>
+<footer class="foot" id="ft2"></footer>
+<div id="toast" role="status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="cd.js"></script>
+<script>
+(function(){
+var $=CD.$,esc=CD.esc,sb=CD.sb,toast=CD.toast;
+var user=null,isAdmin=false,orgs=[],org=null,tpls=[],tab="issue",page=0,PS=25,editT=null,imgData="";
+$("ft2").innerHTML=CD.footer();
+
+async function init(){
+ var s=await sb.auth.getSession();user=s.data&&s.data.session?s.data.session.user:null;
+ if(!user){$("gate").hidden=false;return}
+ var a=await sb.rpc("is_admin");isAdmin=a.data===true;
+ await loadOrgs();
+ if(!isAdmin&&!orgs.length){$("none").hidden=false;return}
+ $("wrap").hidden=false;buildTabs();show(isAdmin&&!orgs.length?"orgs":"issue")}
+async function loadOrgs(keep){
+ var r=await sb.from("organisations").select("*").order("name");orgs=r.data||[];
+ var cur=keep||(org&&org.id);org=orgs.filter(function(o){return o.id===cur})[0]||orgs[0]||null;
+ $("org").innerHTML=orgs.map(function(o){return '<option value="'+esc(o.id)+'"'+(org&&o.id===org.id?" selected":"")+'>'+esc(o.name)+(o.active?"":" (inactive)")+'</option>'}).join("")||'<option value="">No organisations yet</option>';
+ await loadTpls()}
+async function loadTpls(){
+ if(!org){tpls=[];return}
+ var r=await sb.from("badge_templates").select("*").eq("org_id",org.id).order("created_at",{ascending:false});tpls=r.data||[]}
+function buildTabs(){
+ var t=[["issue","Issue badges"],["issued","Issued"]];if(isAdmin)t.push(["orgs","Organisations"],["tpls","Badge templates"]);
+ $("tabs").innerHTML=t.map(function(x){return '<button role="tab" data-t="'+x[0]+'" aria-selected="false">'+x[1]+'</button>'}).join("")}
+$("tabs").onclick=function(e){var b=e.target.closest("button");if(b)show(b.dataset.t)};
+$("org").onchange=async function(){org=orgs.filter(function(o){return o.id===$("org").value})[0]||null;await loadTpls();show(tab)};
+function show(t){
+ tab=t;["issue","issued","orgs","tpls"].forEach(function(k){var el=$("t-"+k);if(el)el.hidden=k!==t});
+ [].forEach.call($("tabs").children,function(b){b.setAttribute("aria-selected",String(b.dataset.t===t))});
+ if(t==="issue")renderIssue();if(t==="issued"){page=0;$("il").innerHTML="";loadIssued()}
+ if(t==="orgs")renderOrgs();if(t==="tpls")renderTpls()}
+
+/* ----- issue ----- */
+function activeTpls(){return tpls.filter(function(t){return t.active})}
+function renderIssue(){
+ var l=activeTpls();$("itpl").innerHTML=l.map(function(t){return '<option value="'+esc(t.id)+'">'+esc(t.name)+'</option>'}).join("");
+ $("inone").hidden=l.length>0;$("igo").disabled=!l.length;$("ires").innerHTML=""}
+$("igo").onclick=async function(){
+ var t=activeTpls().filter(function(x){return x.id===$("itpl").value})[0];if(!t){toast("Choose a badge first.");return}
+ var seen={},em=[];$("iem").value.split(/[\s,;]+/).forEach(function(x){x=x.trim().toLowerCase();if(x&&!seen[x]){seen[x]=1;em.push(x)}});
+ if(!em.length){toast("Add at least one email address.");return}
+ if(em.length>200){toast("Please issue to 200 people or fewer at a time.");return}
+ if(!confirm("Issue “"+t.name+"” to "+em.length+(em.length===1?" person?":" people?")))return;
+ var b=this;b.disabled=true;
+ var r=await sb.rpc("issue_badges",{p_template:t.id,p_emails:em,p_expires:$("iex").value||null,p_note:$("ino").value.trim()||null});
+ b.disabled=false;
+ if(r.error){toast("Couldn’t issue: "+r.error.message);return}
+ var c={issued:0,duplicate:0,invalid:0},bad=[];(r.data||[]).forEach(function(x){c[x.result]=(c[x.result]||0)+1;if(x.result==="invalid")bad.push(x.email)});
+ var msg='Hi! You’ve been awarded “'+t.name+'” by '+(org?org.name:"us")+' on CredDex.\n\nTo add it to your collection, sign in at '+CD.BASE+'app.html with this email address, then tap “Add to my CredDex” on the banner at the top.\n\nAnyone can check a badge at '+CD.BASE+'verify.html';
+ $("ires").innerHTML='<div class="li"><strong class="ok">Issued: '+c.issued+'</strong>'+(c.duplicate?'<span class="muted">Already had it: '+c.duplicate+'</span>':"")+(c.invalid?'<span class="bad">Not valid emails: '+esc(bad.join(", "))+'</span>':"")+'</div>'+
+  (c.issued?'<label>Message you can send them<textarea id="imsg" rows="6" readonly>'+esc(msg)+'</textarea></label><div class="row"><button class="btn" id="icp">Copy message</button></div>':"");
+ if(c.issued)$("iem").value=""};
+$("ires").onclick=function(e){if(e.target.id==="icp"){var t=$("imsg").value;navigator.clipboard.writeText(t).then(function(){toast("Message copied")},function(){$("imsg").select();toast("Press Ctrl+C to copy.")})}};
+
+/* ----- issued list ----- */
+function fillFilter(){$("ftpl").innerHTML='<option value="">All badges</option>'+tpls.map(function(t){return '<option value="'+esc(t.id)+'">'+esc(t.name)+'</option>'}).join("")}
+async function loadIssued(){
+ if(!org){$("il").innerHTML='<p class="muted">Choose an organisation.</p>';return}
+ if(!page)fillFilterKeep();
+ var q=sb.from("issued_badges").select("id,recipient_email,issued_on,expires_on,status,recipient_user_id,verify_code,badge_templates(name)").eq("org_id",org.id).order("created_at",{ascending:false}).range(page*PS,page*PS+PS-1);
+ if($("ftpl").value)q=q.eq("template_id",$("ftpl").value);
+ var s=$("fq").value.trim().replace(/[%,()*]/g,"");if(s)q=q.ilike("recipient_email","%"+s+"%");
+ var r=await q;if(r.error){toast("Couldn’t load: "+r.error.message);return}
+ var d=r.data||[];
+ var h=d.map(function(b){
+  var st=b.status==="revoked"?'<span class="bad">Revoked</span>':(b.recipient_user_id?'<span class="ok">Claimed</span>':'<span class="muted">Waiting to be claimed</span>');
+  return '<div class="li"><div class="top2"><strong>'+esc(b.badge_templates?b.badge_templates.name:"Badge")+'</strong>'+st+'</div><div>'+esc(b.recipient_email)+'</div><div class="muted">Issued '+esc(CD.fmtDate(b.issued_on))+(b.expires_on?" · expires "+esc(CD.fmtDate(b.expires_on)):"")+'</div><div class="acts"><button class="btn sm" data-a="cp" data-c="'+esc(b.verify_code)+'">Copy verify link</button>'+(b.status==="revoked"?"":'<button class="btn sm del" data-a="rv" data-id="'+esc(b.id)+'">Revoke</button>')+'</div></div>'}).join("");
+ $("il").innerHTML=(page?$("il").innerHTML:"")+(h||(page?"":'<p class="muted">Nothing issued yet.</p>'));
+ $("ilm").hidden=d.length<PS}
+function fillFilterKeep(){var v=$("ftpl").value;fillFilter();$("ftpl").value=v}
+$("ilm").onclick=function(){page++;loadIssued()};
+$("ftpl").onchange=function(){page=0;$("il").innerHTML="";loadIssued()};
+var ft;$("fq").oninput=function(){clearTimeout(ft);ft=setTimeout(function(){page=0;$("il").innerHTML="";loadIssued()},350)};
+$("il").onclick=async function(e){
+ var b=e.target.closest("button");if(!b)return;
+ if(b.dataset.a==="cp"){var u=CD.BASE+"verify.html?c="+b.dataset.c;navigator.clipboard.writeText(u).then(function(){toast("Link copied")},function(){prompt("Copy this link:",u)})}
+ if(b.dataset.a==="rv"){
+  if(!confirm("Revoke this badge? The recipient will see it marked as revoked."))return;
+  var why=prompt("Reason for revoking (optional, only your organisation sees it):");if(why===null)return;
+  var r=await sb.rpc("revoke_badge",{p_id:b.dataset.id,p_reason:why||null});
+  if(r.error){toast("Couldn’t revoke: "+r.error.message);return}
+  toast("Badge revoked");page=0;$("il").innerHTML="";loadIssued()}};
+
+/* ----- organisations (admin) ----- */
+function renderOrgs(){
+ $("ol").innerHTML=orgs.length?orgs.map(function(o){return '<div class="li"><div class="top2"><strong>'+esc(o.name)+'</strong><span class="'+(o.active?"ok":"bad")+'">'+(o.active?"Active":"Inactive")+'</span></div><div class="acts"><button class="btn sm" data-a="sel" data-id="'+esc(o.id)+'">Select</button><button class="btn sm" data-a="ct" data-id="'+esc(o.id)+'">Set contact email</button><button class="btn sm" data-a="act" data-id="'+esc(o.id)+'">'+(o.active?"Deactivate":"Activate")+'</button></div><div class="muted">Contact: '+esc(o.contact_email||"not set")+'</div></div>'}).join(""):'<p class="muted">No organisations yet. Add the first one below.</p>';
+ $("mon").textContent=org?org.name:"(choose an organisation)";loadMembers()}
+$("ol").onclick=async function(e){var b=e.target.closest("button");if(!b)return;var id=b.dataset.id;
+ if(b.dataset.a==="sel"){$("org").value=id;org=orgs.filter(function(o){return o.id===id})[0];await loadTpls();renderOrgs()}
+ if(b.dataset.a==="ct"){var oo=orgs.filter(function(x){return x.id===id})[0];var ce=prompt("Contact email shown on this organisation’s badge pages (leave empty to clear):",oo.contact_email||"");if(ce===null)return;ce=ce.trim();
+  if(ce&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(ce)){toast("That doesn’t look like an email address.");return}
+  var r2=await sb.from("organisations").update({contact_email:ce||null}).eq("id",id);if(r2.error){toast(r2.error.message);return}await loadOrgs(id);renderOrgs();toast("Saved")}
+ if(b.dataset.a==="act"){var o=orgs.filter(function(x){return x.id===id})[0];
+  var r=await sb.from("organisations").update({active:!o.active}).eq("id",id);if(r.error){toast(r.error.message);return}await loadOrgs(id);renderOrgs()}};
+$("oc").onclick=async function(){
+ var n=$("on").value.trim();if(n.length<2){toast("Add the organisation’s name.");return}
+ var slug=n.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,60);
+ var w=$("ow").value.trim();if(w&&!/^https?:\/\//i.test(w)){toast("Website must start with http:// or https://");return}
+ var r=await sb.from("organisations").insert({name:n,slug:slug,website:w||null,contact_email:$("oe").value.trim()||null,description:$("od").value.trim()||null}).select().single();
+ if(r.error){toast(r.error.code==="23505"?"An organisation with that name already exists.":"Couldn’t add: "+r.error.message);return}
+ $("on").value=$("ow").value=$("od").value=$("oe").value="";await loadOrgs(r.data.id);renderOrgs();toast("Organisation added")};
+async function loadMembers(){
+ if(!org){$("ml").innerHTML="";return}
+ var r=await sb.rpc("admin_list_members",{p_org:org.id});
+ $("ml").innerHTML=r.error?'<p class="bad">'+esc(r.error.message)+'</p>':((r.data||[]).map(function(m){return '<div class="li"><div class="top2"><span>'+esc(m.email)+' · '+esc(m.role)+'</span><button class="btn sm del" data-u="'+esc(m.user_id)+'">Remove</button></div></div>'}).join("")||'<p class="muted">No one yet.</p>')}
+$("ml").onclick=async function(e){var b=e.target.closest("button");if(!b||!org)return;
+ if(!confirm("Remove this person?"))return;
+ var r=await sb.from("org_members").delete().eq("org_id",org.id).eq("user_id",b.dataset.u);
+ if(r.error){toast(r.error.message);return}loadMembers()};
+$("ma").onclick=async function(){
+ if(!org){toast("Choose an organisation first.");return}
+ var e=$("me").value.trim();if(!e){toast("Enter their email.");return}
+ var r=await sb.rpc("admin_add_member",{p_org:org.id,p_email:e,p_role:$("mr").value});
+ if(r.error){toast(r.error.message);return}$("me").value="";loadMembers();toast("Added")};
+
+/* ----- badge templates (admin) ----- */
+function renderTpls(){
+ $("ton").textContent=org?org.name:"(choose an organisation)";
+ $("tcat").innerHTML='<option value="">Not set</option>'+CD.CATS.map(function(c){return '<option>'+esc(c)+'</option>'}).join("");
+ $("tl").innerHTML=tpls.length?tpls.map(function(t){return '<div class="li"><div class="top2"><strong>'+esc(t.name)+'</strong><span class="muted">'+(t.active?"Active":"Inactive")+(t.listed?" · on home page":"")+(t.setup_paid?" · paid":" · setup unpaid")+'</span></div><div class="acts"><button class="btn sm" data-a="ed" data-id="'+esc(t.id)+'">Edit</button><button class="btn sm" data-a="ac" data-id="'+esc(t.id)+'">'+(t.active?"Deactivate":"Activate")+'</button><button class="btn sm del" data-a="dl" data-id="'+esc(t.id)+'">Delete</button></div></div>'}).join(""):'<p class="muted">No badges yet. Create the first one below.</p>';
+ resetForm()}
+function resetForm(){editT=null;imgData="";$("tft").textContent="Create a badge";$("tcx").hidden=true;
+ ["tn","td","tc","ts","tno"].forEach(function(i){$(i).value=""});$("tcat").value="";$("tlv").value="";$("tfile").value="";$("tli").checked=false;$("tpd").checked=false}
+$("tcx").onclick=resetForm;
+$("tl").onclick=async function(e){var b=e.target.closest("button");if(!b)return;var t=tpls.filter(function(x){return x.id===b.dataset.id})[0];if(!t)return;
+ if(b.dataset.a==="ed"){editT=t.id;imgData="";$("tft").textContent="Edit badge";$("tcx").hidden=false;
+  $("tn").value=t.name;$("td").value=t.description||"";$("tc").value=t.criteria||"";$("ts").value=t.skills||"";$("tcat").value=t.category||"";$("tlv").value=t.level||"";$("tfile").value="";$("tli").checked=!!t.listed;$("tpd").checked=!!t.setup_paid;$("tno").value=t.setup_notes||"";
+  $("tft").scrollIntoView({behavior:CD.smooth()})}
+ if(b.dataset.a==="ac"){var r=await sb.from("badge_templates").update({active:!t.active}).eq("id",t.id);if(r.error){toast(r.error.message);return}await loadTpls();renderTpls()}
+ if(b.dataset.a==="dl"){if(!confirm("Delete this badge template?"))return;
+  var d=await sb.from("badge_templates").delete().eq("id",t.id);
+  if(d.error){toast(d.error.code==="23503"?"Badges have been issued from this one. Deactivate it instead.":d.error.message);return}
+  await loadTpls();renderTpls();toast("Deleted")}};
+$("tfile").onchange=function(){
+ var f=this.files[0];if(!f)return;var r=new FileReader();
+ r.onload=function(){var im=new Image();im.onload=function(){
+  var k=Math.min(1,512/Math.max(im.width,im.height)),cv=document.createElement("canvas");cv.width=Math.round(im.width*k);cv.height=Math.round(im.height*k);
+  cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);imgData=cv.toDataURL("image/png");toast("Artwork ready")};
+  im.onerror=function(){toast("That file isn’t a readable image.")};im.src=r.result};r.readAsDataURL(f)};
+$("tsv").onclick=async function(){
+ if(!org){toast("Choose an organisation first.");return}
+ var n=$("tn").value.trim();if(n.length<2){toast("Add a badge name.");return}
+ var cur=editT?tpls.filter(function(x){return x.id===editT})[0]:null,path=cur?cur.image_path:null;
+ var b=this;b.disabled=true;
+ if(imgData){var blob=await(await fetch(imgData)).blob(),p=org.id+"/"+crypto.randomUUID()+".png";
+  var u=await sb.storage.from("badge-art").upload(p,blob,{contentType:"image/png"});
+  if(u.error){b.disabled=false;toast("Artwork didn’t upload: "+u.error.message);return}
+  if(path)await sb.storage.from("badge-art").remove([path]);path=p}
+ var row={org_id:org.id,name:n,description:$("td").value.trim()||null,criteria:$("tc").value.trim()||null,skills:$("ts").value.trim()||null,category:$("tcat").value||null,level:$("tlv").value||null,image_path:path,listed:$("tli").checked,setup_paid:$("tpd").checked,setup_notes:$("tno").value.trim()||null};
+ var r=editT?await sb.from("badge_templates").update(row).eq("id",editT):await sb.from("badge_templates").insert(row);
+ b.disabled=false;if(r.error){toast("Couldn’t save: "+r.error.message);return}
+ await loadTpls();renderTpls();toast("Badge saved")};
+init();
+})();
+</script>
+</body>
+</html>

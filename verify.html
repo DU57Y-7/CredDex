@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Verify a badge · CredDex</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="cd.css">
+</head>
+<body>
+<header>
+  <h1><a href="index.html">CredDex</a><small>Badge verification</small></h1>
+  <div class="acts"><a class="btn" href="index.html">Home</a></div>
+</header>
+<div class="vwrap">
+  <div class="vcard" id="v"><p class="muted">Checking…</p></div>
+  <form id="f" class="panel f" style="margin-top:14px">
+    <label>Have a verification code? Enter it here<input id="c" maxlength="40" autocomplete="off" placeholder="e.g. 3f9a1c0b7d2e4a68"></label>
+    <div class="row"><button class="btn pri" type="submit">Check</button></div>
+  </form>
+</div>
+<footer class="foot" id="ft2"></footer>
+<div id="toast" role="status"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="cd.js"></script>
+<script>
+(function(){
+var $=CD.$,esc=CD.esc,sb=CD.sb;
+$("ft2").innerHTML=CD.footer();
+async function check(code){
+ code=String(code||"").trim().toLowerCase().replace(/[^a-f0-9]/g,"");
+ var v=$("v");
+ if(!code){v.innerHTML='<h2>Verify a badge</h2><p class="muted">Open a verification link, or enter a code below.</p>';return}
+ v.innerHTML='<p class="muted">Checking…</p>';
+ var r=await sb.rpc("verify_badge",{p_code:code});
+ if(r.error||!r.data||!r.data.length){v.innerHTML='<h2>Badge not found</h2><p class="muted">We couldn’t find a badge with that code. Check the link or code and try again.</p>';return}
+ var b=r.data[0],expired=b.expires_on&&b.status==="issued"&&!b.valid,
+  st=b.valid?'<span class="vstat ok">Valid</span>':'<span class="vstat bad">'+(b.status==="revoked"?"Revoked":"Expired")+'</span>',
+  sk=String(b.skills||"").split(";").map(function(s){return s.trim()}).filter(Boolean),w=CD.safeUrl(b.org_website);
+ v.innerHTML='<div class="dt">'+CD.badge({issuer:b.org_name,name:b.name,img:CD.artUrl(b.image_path)})+'<h2>'+esc(b.name)+'</h2>'+st+
+  '<div class="meta">Issued by '+(w?'<a href="'+esc(w)+'" target="_blank" rel="noopener noreferrer">'+esc(b.org_name)+'</a>':esc(b.org_name))+' on '+esc(CD.fmtDate(b.issued_on))+(b.expires_on?' · '+(expired?"expired ":"expires ")+esc(CD.fmtDate(b.expires_on)):"")+'</div>'+
+  (b.description?'<p>'+esc(b.description)+'</p>':"")+(b.criteria?'<p class="meta"><strong>Earned by:</strong> '+esc(b.criteria)+'</p>':"")+
+  (sk.length?'<div class="tags">'+sk.map(function(s){return '<span class="tag">'+esc(s)+'</span>'}).join("")+'</div>':"")+
+  '<p><a class="btn" href="badge.html?t='+encodeURIComponent(b.template_id)+'">Badge details and contact the issuer</a></p>'+
+  '<p class="meta">Verified by CredDex at the time you opened this page.</p></div>'}
+$("f").onsubmit=function(e){e.preventDefault();var c=$("c").value;history.replaceState(null,"","?c="+encodeURIComponent(c.trim()));check(c)};
+check(new URLSearchParams(location.search).get("c"));
+})();
+</script>
+</body>
+</html>

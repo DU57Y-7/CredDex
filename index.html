@@ -3,550 +3,182 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>CredDex</title>
+<title>CredDex: find, earn and collect micro-credentials</title>
+<meta name="description" content="Browse micro-credentials and badges by topic, then create a free CredDex to collect and share everything you earn.">
+<script>
+/* sign-in returns, share links and old embeds still land in the app */
+(function(){var q=location.search,h=location.hash;
+ if(/[?&](u|embed|code|error|error_description)=/.test(q)||/access_token=|refresh_token=|error=|type=recovery/.test(h))location.replace("app.html"+q+h)})();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
-<style>
-:root{--bg:#eef1f4;--card:#fff;--ink:#1b2433;--mute:#667085;--line:#d5dbe3;--acc:#0e7c86;--accink:#fff;--danger:#b42318;
-box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121821;--card:#1b2431;--ink:#e8edf3;--mute:#9aa6b6;--line:#2e3a4b;--acc:#35b9c4;--accink:#08202a;--danger:#f97066}}
-:root[data-theme="dark"]{--bg:#121821;--card:#1b2431;--ink:#e8edf3;--mute:#9aa6b6;--line:#2e3a4b;--acc:#35b9c4;--accink:#08202a;--danger:#f97066}
-*{box-sizing:border-box}
-[hidden]{display:none!important}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 "Bricolage Grotesque",system-ui,sans-serif}
-header{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;padding:20px clamp(16px,4vw,40px) 8px}
-h1{margin:0;font-size:28px;font-weight:800;letter-spacing:-.02em;flex:1 1 auto}
-h1 small{display:block;font-size:14px;font-weight:400;color:var(--mute);letter-spacing:0}
-button,input,select,textarea{font:inherit;color:inherit}
-.btn{border:1px solid var(--line);background:var(--card);padding:8px 14px;border-radius:8px;cursor:pointer}
-.btn.pri{background:var(--acc);color:var(--accink);border-color:var(--acc);font-weight:600}
-.btn.del{color:var(--danger)}
-.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.card:focus-visible,.lnk:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
-.lnk{background:none;border:0;padding:0;color:var(--acc);text-decoration:underline;cursor:pointer}
-.bar{display:flex;flex-wrap:wrap;gap:10px;padding:8px clamp(16px,4vw,40px) 16px;align-items:center}
-.bar input[type=search],.bar select{padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
-.bar input[type=search]{flex:1 1 200px;min-width:0}
-.count{color:var(--mute);margin-left:auto}
-.fw{position:relative}
-.fp{position:absolute;z-index:5;top:calc(100% + 6px);left:0;min-width:220px;max-height:300px;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:6px}
-.fp label{display:flex;gap:8px;align-items:center;padding:6px 8px;border-radius:6px;cursor:pointer}
-.fp label:hover{background:var(--bg)}
-.fp .none{padding:8px;color:var(--mute)}
-.fp .clr{width:100%;margin-top:4px}
-.emb header,.emb .tb,.emb .rec{display:none}.emb body{background:transparent}
-.tb{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:4px clamp(16px,4vw,40px) 8px;padding:10px 14px;border:1px solid var(--acc);border-radius:10px;background:var(--card)}
-.tb span{flex:1 1 260px}
-.tb a{color:var(--acc)}
-main{padding:0 clamp(16px,4vw,40px) 40px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 16px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px}
-.card:hover{border-color:var(--acc)}
-.badge{width:112px;height:112px;display:block;object-fit:contain}
-.card h3{margin:6px 0 0;font-size:16px;font-weight:600;line-height:1.25}
-.meta{color:var(--mute);font-size:14px}
-.tags{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:4px}
-.tag{font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--mute)}
-.empty{text-align:center;padding:60px 16px;color:var(--mute)}
-.rec{margin-top:28px;padding:8px clamp(16px,4vw,40px) 64px;border-top:1px solid var(--line)}
-.rec:focus{outline:none}
-.rech{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;margin:20px 0 4px}
-.rech h2{margin:0;font-size:24px;font-weight:800;letter-spacing:-.01em}
-.recnote{color:var(--mute);margin:0 0 18px;max-width:70ch}
-.rec .empty{grid-column:1/-1;padding:32px 16px}
-.more{display:flex;gap:12px;align-items:center;justify-content:center;margin-top:20px;color:var(--mute)}
-dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);padding:22px;width:min(480px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto}
-dialog::backdrop{background:rgba(10,15,22,.55)}
-dialog h2{margin:0 0 12px;font-size:22px}
-dialog h3.sec{margin:14px 0 0;font-size:17px;padding-top:12px;border-top:1px solid var(--line)}
-.f{display:grid;gap:12px}
-.f label{display:grid;gap:4px;font-weight:600;font-size:14px}
-.f input,.f textarea,.f select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-weight:400}
-.f .chk{display:flex;gap:8px;align-items:center;font-weight:400}
-.f .chk input{padding:0}
-.goals{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:2px 12px}
-.goals label{display:flex;gap:8px;align-items:center;font-weight:400;font-size:14px;padding:3px 0}
-.goals input{padding:0}
-.row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:6px}
-.dt{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
-.dt .badge{width:160px;height:160px}
-.dt p{margin:4px 0;white-space:pre-wrap}
-.dt a{color:var(--acc)}
-.dt .why{white-space:normal}
-.dt .row{justify-content:center}
-#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:calc(100vw - 24px)}
-#toast.on{opacity:1}
-@media (prefers-reduced-motion:reduce){#toast{transition:none}}
-</style>
+<link rel="stylesheet" href="cd.css">
 </head>
 <body>
 <header>
-  <h1>CredDex<small>Your collection of micro-credentials</small></h1>
-  <button class="btn" id="mig" hidden>Upload this browser’s credentials</button>
-  <button class="btn" id="recb" hidden>Recommended Creds</button>
-  <button class="btn pri" id="add">Add credential</button>
-  <button class="btn" id="shb" hidden>Copy share link</button>
-  <button class="btn" id="stb" hidden>Profile &amp; settings</button>
-  <button class="btn" id="out" hidden>Sign out</button>
-  <input type="file" id="impf" accept="application/json" hidden>
+  <h1><a href="index.html">CredDex</a><small>Find, earn and collect micro-credentials</small></h1>
+  <div class="acts">
+    <a class="btn" href="#browse">Browse</a>
+    <a class="btn pri" id="cta" href="app.html">Create your CredDex</a>
+  </div>
 </header>
-<div class="tb" id="tb" role="region" aria-label="Updated terms" hidden>
-  <span>We’ve updated our <a id="tl1" target="_blank" rel="noopener">Terms</a> and <a id="tl2" target="_blank" rel="noopener">Privacy Policy</a>. Please read them and agree to keep using CredDex.</span>
-  <button class="btn pri" id="tba">I agree</button>
-</div>
-<div class="bar">
-  <input type="search" id="q" placeholder="Search by name or issuer" aria-label="Search credentials">
-  <div class="fw"><button class="btn" id="fb" aria-expanded="false">Filter by tag</button><div class="fp" id="fp" hidden></div></div>
-  <select id="sort" aria-label="Sort credentials">
-    <option value="new">Newest earned</option><option value="old">Oldest earned</option>
-    <option value="az">Name A–Z</option><option value="iss">Issuer A–Z</option>
-  </select>
-  <span class="count" id="count"></span>
-</div>
-<main><div class="grid" id="grid"></div><div class="empty" id="empty" hidden></div></main>
 
-<section class="rec" id="rec" tabindex="-1" aria-labelledby="rect" hidden>
-  <div class="rech"><h2 id="rect">Recommended credentials</h2><button class="btn" id="top">Back to top</button></div>
-  <p class="recnote" id="recnote"></p>
-  <div class="grid" id="recgrid"></div>
-  <div class="more" id="more" hidden><span id="morec"></span><button class="btn" id="morb">Show more</button></div>
+<section class="hero" aria-labelledby="ht">
+  <h2 id="ht">Every badge and certificate you earn, in one place.</h2>
+  <p>Create a free CredDex to collect, organise and share your micro-credentials, and get ideas for what to earn next.</p>
+  <div class="acts"><a class="btn" id="cta2" href="app.html">Create your CredDex, it’s free</a><a class="btn ghost" href="#browse">Browse credentials</a></div>
 </section>
 
-<dialog id="dv"><div class="dt" id="dvb"></div></dialog>
-<dialog id="dr"><div class="dt" id="drb"></div></dialog>
-<dialog id="df"><h2 id="dft">Add credential</h2>
-<div class="f">
-  <label>Credential name<input id="fn" required maxlength="120"></label>
-  <label>Issuing organisation<input id="fi" required maxlength="120"></label>
-  <label>Date earned<input id="fd" type="date"></label>
-  <label>Badge image<input id="fimg" type="file" accept="image/*"></label>
-  <label>Evidence link<input id="fu" type="url" placeholder="https://"></label>
-  <label>Description<textarea id="fx" rows="3" maxlength="600"></textarea></label>
-  <label>Tags (separate with commas)<input id="ft" placeholder="Leadership, University"></label>
-  <label>Category (helps with recommendations)<select id="fcat"></select></label>
-  <label class="chk"><input id="fpe" type="checkbox"> Credential from a past event or one-off (like a “2026 trip”). Don’t base suggestions on it.</label>
-  <label class="chk"><input id="fh" type="checkbox"> Hide from my public profile</label>
-  <div class="row"><button class="btn" id="fc">Cancel</button><button class="btn pri" id="fs">Save credential</button></div>
-</div></dialog>
-<dialog id="da"><h2>Sign in to CredDex</h2><div class="f">
-  <button class="btn" id="gg">Continue with Google</button>
-  <div class="meta" style="text-align:center">or use email</div>
-  <label>Email<input id="ae" type="email" autocomplete="email"></label>
-  <label>Password<input id="ap" type="password" autocomplete="current-password" minlength="8"></label>
-  <div class="meta" id="dam" role="alert"></div>
-  <div class="row"><button class="btn" id="su">Create account</button><button class="btn pri" id="si">Sign in</button></div>
-  <div class="meta">By continuing you agree to the <a id="tl3" target="_blank" rel="noopener" style="color:var(--acc)">Terms</a> and <a id="tl4" target="_blank" rel="noopener" style="color:var(--acc)">Privacy Policy</a>.</div>
-</div></dialog>
-<dialog id="ds"><h2>Profile &amp; settings</h2><div class="f">
-  <h3 class="sec" style="margin-top:0;border:0;padding:0">Account</h3>
-  <label>Email<input id="pem" readonly tabindex="-1" autocomplete="off"></label>
+<main>
+  <section class="sect" id="feat" hidden aria-labelledby="ft"><h2 id="ft">Featured credentials</h2><div class="grid" id="fg"></div></section>
+  <section class="sect" id="own" hidden aria-labelledby="ot"><h2 id="ot">Credentials from CredDex</h2><p class="muted">Badges created with schools, clubs and organisations, and issued through CredDex.</p><div class="grid" id="og"></div></section>
 
-  <h3 class="sec">Public profile</h3>
-  <label>Username<input id="pu" maxlength="30" placeholder="dustin" autocomplete="off"></label>
-  <div class="meta" id="pa" aria-live="polite"></div>
-  <label>Display name (doesn’t need to be unique)<input id="pn" maxlength="60"></label>
-  <label class="chk"><input id="pv" type="checkbox"> Make my profile public</label>
-  <div class="meta" id="pl" style="word-break:break-all"></div>
-  <div class="row"><button class="btn" id="pk">Copy link</button><button class="btn pri" id="ps">Save profile</button></div>
+  <section class="sect" id="browse" aria-labelledby="bt" tabindex="-1">
+    <h2 id="bt">Browse credentials</h2>
+    <input type="search" class="srch" id="q" placeholder="Search by name, issuer or skill" aria-label="Search credentials">
+    <div class="chips scroll" id="cl" aria-label="Topic groups"></div>
+    <div class="chips" id="sub" aria-label="Topics"></div>
+    <div class="chips" id="gen" aria-label="Popular topics"></div>
+    <p class="muted" id="mine" hidden></p>
+    <div class="meta" id="cnt" aria-live="polite" style="margin:8px 0"></div>
+    <div class="grid" id="g"></div>
+    <div class="more" id="more" hidden><button class="btn pri" id="morb">Show more</button></div>
+  </section>
 
-  <h3 class="sec">About you</h3>
-  <div class="meta">Optional. Only used to suggest credentials, and only you can see it.</div>
-  <label>Institution or organisation<input id="pi" maxlength="80" placeholder="Griffith University"></label>
-  <label>Field of study or work<input id="pf" maxlength="80" placeholder="Mechanical engineering"></label>
-  <label>Where are you at?<select id="pst"><option value="">Prefer not to say</option><option>School student</option><option>University student</option><option>Graduate</option><option>Professional</option><option>Other</option></select></label>
-  <div><div style="font-weight:600;font-size:14px;margin-bottom:4px">Goals: what do you want to build skills in?</div><div class="goals" id="pg"></div></div>
-  <div class="row"><button class="btn" id="prh">Reset hidden suggestions</button><button class="btn pri" id="pss">Save about you</button></div>
+  <section class="sect">
+    <div class="panel"><h2>Run a school, club or team?</h2>
+    <p class="muted" style="margin:0 0 10px">We can set up your own badges and let you issue them to your students or members through CredDex. Get in touch to find out how it works.</p>
+    <a class="btn" href="mailto:dustinjmcguire@gmail.com?subject=CredDex%20badges%20for%20our%20organisation">Email us</a></div>
+  </section>
+</main>
+<footer class="foot" id="ft2"></footer>
 
-  <h3 class="sec">Embed on your website</h3>
-  <div class="meta">Paste this where you want your credentials to appear. Save your profile first and keep it public.</div>
-  <label>Theme<select id="pt"><option value="">Match the visitor’s device</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
-  <label>Height (pixels)<input id="ph" type="number" min="200" max="2000" value="620"></label>
-  <textarea id="pe" readonly rows="6" style="font:13px/1.4 ui-monospace,monospace;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg)"></textarea>
-  <div class="row"><button class="btn pri" id="pm">Copy embed code</button></div>
-
-  <h3 class="sec">Backup</h3>
-  <div class="meta">Your credentials are saved in your account. Download a copy any time, or restore one.</div>
-  <div class="row"><button class="btn" id="imp">Import</button><button class="btn" id="exp">Export</button></div>
-
-  <h3 class="sec">Terms</h3>
-  <div class="meta" id="ptd"></div>
-  <div class="meta"><a id="tl5" target="_blank" rel="noopener" style="color:var(--acc)">Terms</a> · <a id="tl6" target="_blank" rel="noopener" style="color:var(--acc)">Privacy Policy</a></div>
-  <div class="row"><button class="btn" id="pc">Close</button></div>
-</div></dialog>
+<dialog id="dd"><div class="dt" id="ddb"></div></dialog>
 <div id="toast" role="status"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="cd.js"></script>
 <script>
 (function(){
-var SB_URL="https://yjeqsgzivnxsaniarrjb.supabase.co",SB_KEY="sb_publishable_zza_qcM68oQERB8Saiqfdw_-Vssku-T";
-var MAIL="dustinjmcguire@gmail.com";
-var sb=supabase.createClient(SB_URL,SB_KEY);
-var QS=new URLSearchParams(location.search),PUB=QS.get("u");
-if(QS.get("embed")){document.documentElement.classList.add("emb");var th=QS.get("theme");if(th==="dark"||th==="light")document.documentElement.setAttribute("data-theme",th)}
-var $=function(i){return document.getElementById(i)};
-["tl1","tl3","tl5"].forEach(function(i){$(i).href="creddex-terms.html"});
-["tl2","tl4","tl6"].forEach(function(i){$(i).href="creddex-privacy.html"});
-function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
-function toast(m){var t=$("toast");t.textContent=m;t.className="on";clearTimeout(toast.h);toast.h=setTimeout(function(){t.className=""},3200)}
-function hue(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%360;return h}
-function ini(s){
- var w=String(s||"?").split(/[\s\/]+/).filter(function(x){return /^[A-Za-z0-9]/.test(x)});
- if(!w.length)return "?";
- if(/^[A-Z0-9]{2,4}$/.test(w[0]))return w[0];
- return w.slice(0,2).map(function(x){return x[0]}).join("").toUpperCase();
-}
-function badge(c){
- if(c.img)return '<img class="badge" alt="" referrerpolicy="no-referrer" src="'+esc(c.img)+'" data-i="'+esc(c.issuer||"")+'" data-n="'+esc(c.name||"")+'">';
- var h=hue(c.issuer||c.name),t=ini(c.issuer||c.name);
- return '<svg class="badge" viewBox="0 0 100 100" aria-hidden="true"><polygon points="50,4 91,27 91,73 50,96 9,73 9,27" fill="hsl('+h+',55%,38%)"/><polygon points="50,12 84,31 84,69 50,88 16,69 16,31" fill="none" stroke="hsl('+h+',60%,80%)" stroke-width="2"/><text x="50" y="58" text-anchor="middle" font-size="'+(t.length>2?21:26)+'" font-weight="800" fill="#fff" font-family="Bricolage Grotesque,system-ui,sans-serif">'+esc(t)+'</text></svg>';
-}
-function fmt(d){if(!d)return "";var x=new Date(d+"T00:00:00");return isNaN(x)?d:x.toLocaleDateString("en-AU",{month:"short",year:"numeric"})}
-/* if a badge image fails to load (dead link, expired URL), swap in the generated badge */
-document.addEventListener("error",function(e){var t=e.target;
- if(t&&t.tagName==="IMG"&&t.dataset&&t.dataset.n!==undefined){var d=document.createElement("div");d.innerHTML=badge({issuer:t.dataset.i,name:t.dataset.n});if(d.firstChild)t.replaceWith(d.firstChild)}},true);
-var pubMsg="",items=[],sel={},editing=null,pendingImg="",imgChanged=false,user=null;
-/* recommendations state */
-var CATS=["AI & Machine Learning","CAD & Design","Communication & Service","Cloud","Cyber Security","Data Engineering","Employability & Pathways","Engineering Practice","Finance & Business","Leadership & Mentoring","Manufacturing & Making","Programming & Numerical Computing","Project Management","Risk & Safety","Simulation & Analysis","Software & DevOps","Sustainability & Climate","Teaching & Learning"];
-var cat=[],catErr="",settings=null,dismissed={},recUser=null,loaded=false,recList=[],recShown=12;
-function tagsHtml(c){return(c.tags&&c.tags.length)?'<div class="tags">'+c.tags.map(function(t){return '<span class="tag">'+esc(t)+'</span>'}).join("")+'</div>':""}
-function allTags(){var m={};items.forEach(function(c){(c.tags||[]).forEach(function(t){m[t]=1})});return Object.keys(m).sort(function(a,b){return a.localeCompare(b)})}
-function active(){return Object.keys(sel).filter(function(k){return sel[k]})}
-function allCats(extra){var m={};CATS.forEach(function(x){m[x]=1});cat.forEach(function(r){if(r.category)m[r.category]=1});if(extra)m[extra]=1;return Object.keys(m).sort(function(a,b){return a.localeCompare(b)})}
-function smooth(){return matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth"}
-async function loadPublic(){
- var p=await sb.from("profiles").select("user_id,username,display_name").eq("username",PUB.toLowerCase()).maybeSingle(),s=document.querySelector("h1 small");
- if(p.error||!p.data){pubMsg="This profile doesn’t exist or isn’t public. Check the username in the link.";s.textContent=pubMsg;items=[];render();return}
- var nm=p.data.display_name||p.data.username;s.textContent=nm+"’s credentials";document.title=nm+" on CredDex";
- await refresh(p.data.user_id);
-}
-async function refresh(owner){
- var qy=sb.from("credentials").select("*");
- qy=owner?qy.eq("user_id",owner).eq("hidden",false):qy.eq("user_id",user.id);
- var r=await qy.order("created_at");
- if(r.error){pubMsg="Couldn’t load credentials: "+r.error.message;toast("Couldn’t load your collection: "+r.error.message);render();return}
- var paths=r.data.filter(function(x){return x.badge_path}).map(function(x){return x.badge_path}),urls={};
- if(paths.length){var s=await sb.storage.from("badges").createSignedUrls(paths,3600);(s.data||[]).forEach(function(u){urls[u.path]=u.signedUrl})}
- items=r.data.map(function(x){return{id:x.id,name:x.name,issuer:x.issuer,date:x.earned_on||"",desc:x.description||"",url:x.evidence_url||"",tags:x.tags||[],path:x.badge_path,hidden:!!x.hidden,cat:x.category||"",pe:!!x.past_event,img:urls[x.badge_path]||""}});
- render();renderRec();
-}
-function render(){
- var q=$("q").value.trim().toLowerCase(),a=active(),s=$("sort").value;
- var list=items.filter(function(c){
-  return(!q||(c.name+" "+c.issuer).toLowerCase().indexOf(q)>-1)&&(!a.length||(c.tags||[]).some(function(t){return a.indexOf(t)>-1}))});
- list.sort(function(x,y){
-  if(s==="az")return x.name.localeCompare(y.name);
-  if(s==="iss")return x.issuer.localeCompare(y.issuer);
-  var r=(y.date||"").localeCompare(x.date||"");return s==="old"?-r:r});
- $("grid").innerHTML=list.map(function(c){
-  return '<div class="card" tabindex="0" role="button" data-id="'+esc(c.id)+'">'+badge(c)+'<h3>'+esc(c.name)+'</h3><div class="meta">'+esc(c.issuer)+(c.date?" · "+esc(fmt(c.date)):"")+'</div>'+tagsHtml(c)+'</div>'}).join("");
- $("count").textContent=list.length+(list.length===items.length?"":" of "+items.length)+(items.length===1?" credential":" credentials");
- var e=$("empty");e.hidden=list.length>0||(!user&&!PUB);
- e.textContent=items.length?"No credentials match. Clear the search or tag filter.":(PUB?"No public credentials yet.":"Your collection is empty. Add your first credential.");
- if(PUB&&pubMsg){e.textContent=pubMsg;e.hidden=false}
- $("fb").textContent=a.length?"Filter by tag ("+a.length+")":"Filter by tag";
-}
-function renderFilter(){
- var t=allTags();
- $("fp").innerHTML=t.length?t.map(function(x){return '<label><input type="checkbox" value="'+esc(x)+'"'+(sel[x]?" checked":"")+'> '+esc(x)+'</label>'}).join("")+'<button class="btn clr" id="clr">Clear filter</button>':'<div class="none">No tags yet. Add tags when you save a credential.</div>';
-}
-$("fb").onclick=function(e){e.stopPropagation();var p=$("fp");if(p.hidden)renderFilter();p.hidden=!p.hidden;$("fb").setAttribute("aria-expanded",String(!p.hidden))};
-$("fp").onclick=function(e){e.stopPropagation();if(e.target.id==="clr"){sel={};renderFilter();render()}};
-$("fp").onchange=function(e){sel[e.target.value]=e.target.checked;render()};
-document.addEventListener("click",function(){$("fp").hidden=true;$("fb").setAttribute("aria-expanded","false")});
-$("q").oninput=render;$("sort").onchange=render;
-function open(id){
- var c=items.filter(function(x){return x.id===id})[0];if(!c)return;
- var url=/^https?:\/\//i.test(c.url||"")?c.url:"";
- $("dvb").innerHTML=badge(c)+'<h2>'+esc(c.name)+'</h2><div class="meta">'+esc(c.issuer)+(c.date?" · "+esc(fmt(c.date)):"")+'</div>'+(c.pe?'<div class="meta">Past event or one-off</div>':"")+(c.desc?'<p>'+esc(c.desc)+'</p>':"")+tagsHtml(c)+
-  (url?'<p><a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">View evidence</a></p>':"")+
-  '<div class="row">'+(PUB?"":'<button class="btn del" data-a="del" data-id="'+esc(id)+'">Delete</button><button class="btn" data-a="edit" data-id="'+esc(id)+'">Edit</button>')+'<button class="btn pri" data-a="close">Close</button></div>';
- $("dv").showModal();
-}
-$("grid").onclick=function(e){var c=e.target.closest(".card");if(c)open(c.dataset.id)};
-$("grid").onkeydown=function(e){if(e.key==="Enter"||e.key===" "){var c=e.target.closest(".card");if(c){e.preventDefault();open(c.dataset.id)}}};
-$("dv").onclick=async function(e){
- var a=e.target.dataset&&e.target.dataset.a,id=e.target.dataset&&e.target.dataset.id;
- if(a==="close"||e.target===$("dv"))$("dv").close();
- if(a==="edit"){$("dv").close();form(id)}
- if(a==="del"&&confirm("Delete this credential? This can’t be undone.")){
-  var c=items.filter(function(x){return x.id===id})[0];
-  var r=await sb.from("credentials").delete().eq("id",id);
-  if(r.error){toast("Couldn’t delete: "+r.error.message);return}
-  if(c&&c.path)await sb.storage.from("badges").remove([c.path]);
-  $("dv").close();await refresh();toast("Credential deleted")}
-};
-function fillCats(cur){
- $("fcat").innerHTML='<option value="">None / not sure</option>'+allCats(cur).map(function(x){return '<option>'+esc(x)+'</option>'}).join("");
- $("fcat").value=cur||"";
-}
-function form(id){
- editing=id||null;imgChanged=false;var c=id?items.filter(function(x){return x.id===id})[0]:{};
- $("dft").textContent=id?"Edit credential":"Add credential";
- $("fn").value=c.name||"";$("fi").value=c.issuer||"";$("fd").value=c.date||"";$("fu").value=c.url||"";$("fx").value=c.desc||"";$("ft").value=(c.tags||[]).join(", ");$("fimg").value="";
- pendingImg=c.img||"";$("fh").checked=!!c.hidden;$("fpe").checked=!!c.pe;fillCats(c.cat||"");$("df").showModal();
-}
-$("add").onclick=function(){form()};
-$("fc").onclick=function(){$("df").close()};
-$("fimg").onchange=function(){
- var f=this.files[0];if(!f)return;
- var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){
-  var k=Math.min(1,256/Math.max(im.width,im.height)),cv=document.createElement("canvas");
-  cv.width=Math.round(im.width*k);cv.height=Math.round(im.height*k);cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);
-  pendingImg=cv.toDataURL("image/png");imgChanged=true;toast("Badge image added")};
-  im.onerror=function(){toast("That file isn’t a readable image.")};im.src=r.result};r.readAsDataURL(f)};
-async function upload(dataUrl){
- try{var b=await(await fetch(dataUrl)).blob(),p=user.id+"/"+crypto.randomUUID()+".png";
-  var r=await sb.storage.from("badges").upload(p,b,{contentType:"image/png"});return r.error?null:p}catch(e){return null}
-}
-$("fs").onclick=async function(){
- var n=$("fn").value.trim(),i=$("fi").value.trim();
- if(!n||!i){toast("Add a credential name and issuer.");return}
- var u=$("fu").value.trim();if(u&&!/^https?:\/\//i.test(u)){toast("Evidence link must start with http:// or https://");return}
- var tags=[];$("ft").value.split(",").forEach(function(t){t=t.trim();if(t&&tags.indexOf(t)<0)tags.push(t)});
- var btn=this;btn.disabled=true;
- var cur=editing?items.filter(function(x){return x.id===editing})[0]:null,path=cur?cur.path||null:null;
- if(imgChanged&&pendingImg){var old=path;path=await upload(pendingImg);if(!path)toast("Badge image didn’t upload.");else if(old)await sb.storage.from("badges").remove([old])}
- var row={name:n,issuer:i,earned_on:$("fd").value||null,description:$("fx").value.trim()||null,evidence_url:u||null,tags:tags,badge_path:path,hidden:$("fh").checked,category:$("fcat").value||null,past_event:$("fpe").checked};
- var r=editing?await sb.from("credentials").update(Object.assign(row,{updated_at:new Date().toISOString()})).eq("id",editing):await sb.from("credentials").insert(row);
- btn.disabled=false;
- if(r.error){toast("Couldn’t save: "+r.error.message);return}
- $("df").close();await refresh();toast("Credential saved");
-};
-async function addMany(list){
- var n=0;
- for(var c of list){if(!c||!c.name||!c.issuer)continue;
-  var p=c.img&&String(c.img).indexOf("data:")===0?await upload(c.img):null;
-  var r=await sb.from("credentials").insert({name:String(c.name).slice(0,120),issuer:String(c.issuer).slice(0,120),earned_on:c.date||null,description:c.desc?String(c.desc).slice(0,600):null,evidence_url:/^https?:\/\//i.test(c.url||"")?c.url:null,tags:Array.isArray(c.tags)?c.tags:[],badge_path:p,category:typeof c.category==="string"&&c.category?c.category.slice(0,80):null,past_event:!!c.past_event});
-  if(!r.error)n++}
- await refresh();return n;
-}
-$("exp").onclick=async function(){
- toast("Preparing backup…");var out=[];
- for(var c of items){var img="";
-  if(c.img){try{var b=await(await fetch(c.img)).blob();img=await new Promise(function(res){var f=new FileReader();f.onload=function(){res(f.result)};f.readAsDataURL(b)})}catch(e){}}
-  out.push({name:c.name,issuer:c.issuer,date:c.date,desc:c.desc,url:c.url,tags:c.tags,category:c.cat,past_event:c.pe,img:img})}
- var b2=new Blob([JSON.stringify({app:"creddex",version:1,credentials:out},null,2)],{type:"application/json"});
- var a=document.createElement("a");a.href=URL.createObjectURL(b2);a.download="creddex-backup.json";document.body.appendChild(a);a.click();a.remove();
- toast("Backup downloaded, including badge images");
-};
-$("imp").onclick=function(){$("impf").click()};
-$("impf").onchange=function(){
- var f=this.files[0];if(!f)return;var r=new FileReader(),inp=this;
- r.onload=async function(){try{
-  var d=JSON.parse(r.result),l=Array.isArray(d)?d:d.credentials;if(!Array.isArray(l))throw 0;
-  toast("Importing…");var n=await addMany(l);toast("Imported "+n+" credentials")}catch(e){toast("That file isn’t a valid CredDex backup.")}};
- r.readAsText(f);inp.value="";
-};
-function localItems(){try{var l=JSON.parse(localStorage.getItem("creddex:v1")||"[]");return l.filter(function(c){return["s1","s2","s3"].indexOf(c.id)<0})}catch(e){return[]}}
-function checkMig(){$("mig").hidden=!(localItems().length&&!localStorage.getItem("creddex:migrated:"+user.id))}
-$("mig").onclick=async function(){
- toast("Uploading…");var n=await addMany(localItems());
- try{localStorage.setItem("creddex:migrated:"+user.id,"1")}catch(e){}
- $("mig").hidden=true;toast("Uploaded "+n+" credentials from this browser");
-};
-
-/* ---------- recommendations ---------- */
+var $=CD.$,esc=CD.esc,sb=CD.sb,qs=new URLSearchParams(location.search);
+var rows=[],tpls=[],user=null,held={},dismissed={},goals=[];
+var cluster="",cats={},q="",shown=15,PAGE=15,PER_CAT=4;
 function norm(s){return String(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"")}
-function urlKey(u){return String(u||"").toLowerCase().replace(/^https?:\/\/(www\.)?/,"").split(/[?#]/)[0].replace(/\/+$/,"")}
-var FIELDS=[
- [/engineer/i,["CAD & Design","Simulation & Analysis","Programming & Numerical Computing","Engineering Practice","Project Management","Risk & Safety"]],
- [/comput|software|information tech|\bit\b|informatics|data/i,["Software & DevOps","Cloud","AI & Machine Learning","Data Engineering","Cyber Security","Programming & Numerical Computing"]],
- [/business|commerce|financ|account|econom|manage/i,["Finance & Business","Leadership & Mentoring","Project Management","Communication & Service"]],
- [/educat|teach/i,["Teaching & Learning","Communication & Service"]],
- [/environment|sustainab|climate|science/i,["Sustainability & Climate","Employability & Pathways"]],
- [/design|architect|manufactur/i,["CAD & Design","Manufacturing & Making"]]
-];
-function fieldCats(f){var o=[];FIELDS.forEach(function(x){if(x[0].test(f))x[1].forEach(function(k){if(o.indexOf(k)<0)o.push(k)})});return o}
-/* Eligibility is a hint, not a rule: a mismatch only lowers the rank, it never hides a badge. */
-function aud(r,st){
- var a=String(r.access||""),inst=String(st.institution||"").toLowerCase(),fld=String(st.study_field||"").toLowerCase(),sts=st.status||"";
- if(/staff|educators/i.test(a))return sts==="Professional"?0:-30;
- if(/griffith/i.test(a)){
-  if(inst.indexOf("griffith")<0)return -30;
-  if(/engineering/i.test(a)&&fld.indexOf("engineer")<0)return -30;
-  if(/science/i.test(a)&&fld.indexOf("science")<0)return -30;
-  return 0}
- if(/year 11/i.test(a))return sts==="School student"?0:-30;
- if(/apprentice/i.test(a))return inst.indexOf("ibm")>-1?0:-30;
- if(/public sector|participants/i.test(a))return -30;
- return 0}
-function audience(a){
- if(!a)return "";
- var chk=/\(check page\)/i.test(a),t=a.replace(/\s*\(check page\)/i,"").trim();
- if(/^open$/i.test(t))t="Open to anyone";
- else if(/^open\b/i.test(t))t=t.replace(/^open( course)?\s*/i,"Open to anyone ").trim();
- else t="Usually for: "+t;
- return t+(chk?" · not confirmed, check the badge page":"")}
-var PER_CAT=4;
-function hsh(t){var x=7;for(var i=0;i<t.length;i++)x=(x*31+t.charCodeAt(i))>>>0;return x}
-function recs(){
- var uid=user?user.id:"";
- var byN={},byU={};cat.forEach(function(r){byN[norm(r.name)]=r;byU[urlKey(r.credly_url)]=r});
- var held={},hc={},lad={};
- items.forEach(function(c){
-  var m=byN[norm(c.name)]||(c.url&&byU[urlKey(c.url)])||null;
-  if(m)held[m.id]=1;
-  if(c.pe)return;
-  var k=c.cat||(m&&m.category);if(k)hc[k]=(hc[k]||0)+1;
-  if(m&&m.ladder&&m.rung){var L=lad[m.ladder];if(!L||m.rung>L.rung)lad[m.ladder]={rung:m.rung,name:m.name}}
- });
- var tg={};items.forEach(function(c){if(c.pe)return;(c.tags||[]).forEach(function(t){t=String(t).trim();if(t.length>=3&&!tg[t.toLowerCase()])tg[t.toLowerCase()]=t})});
- var tgx=Object.keys(tg).map(function(k){return{t:tg[k],re:new RegExp("(^|[^a-z0-9])"+k.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"([^a-z0-9]|$)","i")}});
- var st=settings||{},goals=st.goals||[],fcats=fieldCats(st.study_field||""),out=[];
- cat.forEach(function(r){
-  if(held[r.id]||dismissed[r.id])return;
-  var sc=0,why=[],lv=String(r.level||"").toLowerCase(),starter=(lv==="foundational"||lv==="entry"||r.rung===1)&&!/prerequisite|needs/i.test(r.access||""),L=r.ladder&&lad[r.ladder];
-  if(L&&r.rung===L.rung+1){sc+=50;why.push("Next step after "+L.name)}
-  else if(L&&r.rung>L.rung+1){sc+=20;why.push("Later step on the same path as "+L.name)}
-  if(goals.indexOf(r.category)>-1){sc+=40;why.push("Matches your goal: "+r.category)}
-  if(fcats.indexOf(r.category)>-1){sc+=25;why.push("Fits your field of study")}
-  if(hc[r.category]){sc+=Math.min(15,5+hc[r.category]*5);why.push("Builds on your "+r.category+" badges")}
-  var hay=r.name+" "+r.category+" "+r.skills,tm=tgx.filter(function(x){return x.re.test(hay)}).map(function(x){return x.t}).slice(0,3);
-  if(tm.length){sc+=Math.min(24,tm.length*12);why.push("Matches your tags: "+tm.join(", "))}
-  if(!hc[r.category]&&starter&&sc>0){sc+=8;why.push("Beginner-friendly place to start")}
-  if(!hc[r.category]&&lv==="advanced")sc-=15;
-  if(r.rung>1&&!L)sc-=10;
-  sc+=aud(r,st)+(starter?3:0);
-  if(!why.length)why.push("A starting point in "+r.category);
-  out.push({r:r,sc:sc,h:hsh(uid+r.id),why:why.slice(0,3)});
- });
- /* equal scores are ordered by a stable per-user shuffle, so no provider or alphabet gets the edge */
- out.sort(function(a,b){return b.sc-a.sc||a.h-b.h});
- var seen={},p=[],o=[];out.forEach(function(x){var k=x.r.category;seen[k]=(seen[k]||0)+1;(seen[k]<=PER_CAT?p:o).push(x)});
- return p.concat(o);
-}
-function renderRec(){
- var sec=$("rec");
- if(PUB||!user||!loaded){sec.hidden=true;$("recb").hidden=true;return}
- sec.hidden=false;$("recb").hidden=false;
- var g=$("recgrid"),n=$("recnote");
- if(catErr){n.textContent="Recommendations couldn’t load: "+catErr;g.innerHTML="";$("more").hidden=true;return}
- var has=settings&&(settings.study_field||(settings.goals&&settings.goals.length));
- n.innerHTML=has?"Picked from your field, goals, tags and the credentials you hold. Tap a badge for the details.":'These are starter suggestions. Add your field and goals in <button class="lnk" id="recp">Profile &amp; settings</button> to get better matches.';
- recList=recs();
- var show=recList.slice(0,recShown);
- g.innerHTML=show.length?show.map(function(x){var r=x.r;
-  return '<div class="card" tabindex="0" role="button" data-id="'+esc(r.id)+'">'+badge({issuer:r.issuer,name:r.name,img:/^https:\/\//i.test(r.image_url||"")?r.image_url:""})+'<h3>'+esc(r.name)+'</h3><div class="meta">'+esc(r.issuer)+'</div></div>'}).join(""):'<div class="empty">No suggestions left right now. Check back after adding more goals or credentials.</div>';
- $("more").hidden=recList.length<=recShown;
- $("morec").textContent="Showing "+Math.min(recShown,recList.length)+" of "+recList.length;
-}
-$("recnote").onclick=function(e){if(e.target.id==="recp")openShare()};
-$("morb").onclick=function(){recShown+=12;renderRec()};
-$("recb").onclick=function(){var s=$("rec");s.scrollIntoView({behavior:smooth(),block:"start"});s.focus({preventScroll:true})};
-$("top").onclick=function(){window.scrollTo({top:0,behavior:smooth()});$("recb").focus({preventScroll:true})};
-async function loadRec(){
- var me=user.id;
+function seed(){if(user)return user.id;try{var s=localStorage.getItem("cd:seed");if(!s){s=Math.random().toString(36).slice(2,10);localStorage.setItem("cd:seed",s)}return s}catch(e){return "x"}}
+function visible(r){return !held[norm(r.name)]&&!dismissed[r.id]}
+function selKeys(){return Object.keys(cats)}
+function browsing(){return !!(q||cluster||selKeys().length)}
+function catCount(){var m={};rows.forEach(function(r){if(r.category&&visible(r))m[r.category]=(m[r.category]||0)+1});return m}
+function clusters(){
+ var cc=catCount(),known={},l=[];
+ CD.CLUSTERS.forEach(function(c){c[1].forEach(function(k){known[k]=1});var k=c[1].filter(function(x){return cc[x]});if(k.length)l.push([c[0],k])});
+ var other=Object.keys(cc).filter(function(k){return !known[k]}).sort();if(other.length)l.push(["Other",other]);
+ return l}
+function pass(r){
+ if(!visible(r))return false;
+ var ks=selKeys();
+ if(ks.length){if(!cats[r.category])return false}
+ else if(cluster&&CD.clusterOf(r.category)!==cluster)return false;
+ if(q&&(r.name+" "+r.issuer+" "+r.category+" "+r.skills).toLowerCase().indexOf(q)<0)return false;
+ return true}
+/* order: starting-point badges first, a fair shuffle within ties, at most PER_CAT per topic before the rest */
+function ordered(list){
+ var sd=seed();
+ var x=list.map(function(r){var lv=String(r.level||"").toLowerCase();
+  var st=(lv==="foundational"||lv==="entry"||r.rung===1)&&!/prerequisite|needs/i.test(r.access||"");
+  var rs=/griffith|year 11|apprentice|staff|educators|public sector|participants/i.test(r.access||"");
+  return{r:r,s:(st?10:0)-(rs?30:0),h:CD.hsh(sd+r.id)}});
+ x.sort(function(a,b){return b.s-a.s||a.h-b.h});
+ var seen={},p=[],o=[];x.forEach(function(y){var k=y.r.category;seen[k]=(seen[k]||0)+1;(seen[k]<=PER_CAT?p:o).push(y.r)});
+ return p.concat(o)}
+function img(r){return /^https:\/\//i.test(r.image_url||"")?r.image_url:""}
+function card(r,feat){
+ var lab=r.sponsored?'<span class="tag lab">Sponsored</span>':(feat?'<span class="tag lab">Featured</span>':"");
+ return '<div class="card" tabindex="0" role="button" data-k="c" data-id="'+esc(r.id)+'">'+CD.badge({issuer:r.issuer,name:r.name,img:img(r)})+'<h3>'+esc(r.name)+'</h3><div class="meta">'+esc(r.issuer)+'</div>'+lab+'</div>'}
+function tcard(t){
+ return '<div class="card" tabindex="0" role="button" data-k="t" data-id="'+esc(t.id)+'">'+CD.badge({issuer:t.org_name,name:t.name,img:CD.artUrl(t.image_path)})+'<h3>'+esc(t.name)+'</h3><div class="meta">'+esc(t.org_name)+'</div><span class="tag lab">Issued via CredDex</span></div>'}
+function chip(label,on,attr){return '<button class="chip" aria-pressed="'+(on?"true":"false")+'" '+attr+'>'+esc(label)+'</button>'}
+function renderChips(){
+ var cl=clusters(),none=!cluster&&!selKeys().length;
+ $("cl").innerHTML=chip("All",none,'data-c=""')+cl.map(function(c){return chip(c[0],cluster===c[0],'data-c="'+esc(c[0])+'"')}).join("");
+ var sub=[];
+ cl.forEach(function(c){if(c[0]===cluster)sub=sub.concat(c[1])});
+ selKeys().forEach(function(k){if(sub.indexOf(k)<0)sub.push(k)});
+ $("sub").hidden=!sub.length;
+ $("sub").innerHTML=sub.map(function(k){return chip(k,!!cats[k],'data-k="'+esc(k)+'"')}).join("");
+ var cc=catCount();
+ $("gen").innerHTML=CD.GENERAL.filter(function(g){return cc[g[1]]}).map(function(g){return chip(g[0],!!cats[g[1]],'data-k="'+esc(g[1])+'"')}).join("")}
+function renderMine(){
+ var el=$("mine");if(!user){el.hidden=true;return}
+ var sel=selKeys().sort().join("|"),mine=goals.slice().sort().join("|");
+ if(sel&&sel!==mine){el.hidden=false;el.innerHTML='<button class="btn sm" id="sv">Save these topics as my goals</button>'}
+ else if(!sel&&goals.length){el.hidden=false;el.innerHTML='Your profile topics: <button class="btn sm" id="use">Show ideas for them</button>'}
+ else el.hidden=true}
+function renderTop(){
+ var b=browsing(),f=ordered(rows.filter(function(r){return r.featured&&visible(r)})).slice(0,12);
+ $("feat").hidden=b||!f.length;$("fg").innerHTML=f.map(function(r){return card(r,true)}).join("");
+ $("own").hidden=b||!tpls.length;$("og").innerHTML=tpls.map(tcard).join("")}
+function renderGrid(){
+ var l=ordered(rows.filter(pass)),n=l.length;
+ $("g").innerHTML=n?l.slice(0,shown).map(function(r){return card(r,false)}).join(""):'<div class="empty" style="grid-column:1/-1">'+(rows.length?"No credentials match. Try another topic or clear the filters.":"Credentials will appear here soon.")+'</div>';
+ $("more").hidden=n<=shown;$("cnt").textContent=n?"Showing "+Math.min(shown,n)+" of "+n+(n===1?" credential":" credentials"):""}
+function renderAll(){renderChips();renderMine();renderTop();renderGrid()}
+function reset(){shown=PAGE;renderAll()}
+
+$("cl").onclick=function(e){var b=e.target.closest(".chip");if(!b)return;
+ var c=b.dataset.c;cats={};cluster=(c===""||c===cluster)?"":c;reset()};
+function toggleCat(e){var b=e.target.closest(".chip");if(!b)return;var k=b.dataset.k;if(cats[k])delete cats[k];else cats[k]=true;
+ if(!selKeys().length&&cluster==="")cluster="";reset()}
+$("sub").onclick=toggleCat;$("gen").onclick=toggleCat;
+$("q").oninput=function(){q=this.value.trim().toLowerCase();reset()};
+$("morb").onclick=function(){shown+=PAGE;renderGrid()};
+$("mine").onclick=function(e){
+ if(e.target.id==="sv")saveGoals();
+ if(e.target.id==="use"){cats={};goals.forEach(function(k){cats[k]=true});cluster="";reset()}};
+async function saveGoals(){
+ var g=selKeys(),r=await sb.from("user_settings").upsert({user_id:user.id,goals:g,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+ if(r.error){CD.toast("Couldn’t save: "+r.error.message);return}
+ goals=g;renderMine();CD.toast("Saved as your goals")}
+
+function openDetail(kind,id){
+ var h="";
+ if(kind==="t"){
+  var t=tpls.filter(function(x){return x.id===id})[0];if(!t)return;
+  var sk=String(t.skills||"").split(";").map(function(s){return s.trim()}).filter(Boolean);
+  h=CD.badge({issuer:t.org_name,name:t.name,img:CD.artUrl(t.image_path)})+'<h2>'+esc(t.name)+'</h2><div class="meta">Issued by '+esc(t.org_name)+' through CredDex</div>'+
+   (t.description?'<p>'+esc(t.description)+'</p>':"")+(t.criteria?'<p class="meta"><strong>To earn it:</strong> '+esc(t.criteria)+'</p>':"")+
+   (sk.length?'<div class="tags">'+sk.map(function(s){return '<span class="tag">'+esc(s)+'</span>'}).join("")+'</div>':"")+
+   '<p class="meta">This badge is awarded by '+esc(t.org_name)+'.</p><p><a href="badge.html?t='+encodeURIComponent(t.id)+'"><strong>More details and contact the issuer</strong></a></p>'}
+ else{
+  var r=rows.filter(function(x){return x.id===id})[0];if(!r)return;
+  var facts=[r.level,r.time,r.cost].filter(Boolean).join(" · "),sk2=String(r.skills||"").split(";").map(function(s){return s.trim()}).filter(Boolean),au=CD.audience(r.access),u=CD.safeUrl(r.credly_url);
+  h=CD.badge({issuer:r.issuer,name:r.name,img:img(r)})+'<h2>'+esc(r.name)+'</h2><div class="meta">'+esc(r.issuer)+(r.badge_type?" · "+esc(r.badge_type):"")+(r.sponsored?" · Sponsored":"")+'</div>'+
+   (facts?'<div class="meta">'+esc(facts)+'</div>':"")+(r.summary?'<p>'+esc(r.summary)+'</p>':"")+
+   (sk2.length?'<div class="tags">'+sk2.map(function(s){return '<span class="tag">'+esc(s)+'</span>'}).join("")+'</div>':"")+
+   (au?'<div class="meta">'+esc(au)+'</div>':"")+(r.checked?'<div class="meta">Last checked '+esc(r.checked)+'</div>':"")+
+   (u?'<p><a href="'+esc(u)+'" target="_blank" rel="noopener noreferrer"><strong>Go to the badge page</strong></a></p>':"")}
+ h+='<div class="row"><button class="btn" data-a="close">Close</button><a class="btn pri" href="app.html">'+(user?"Open My CredDex":"Create your CredDex")+'</a></div>';
+ $("ddb").innerHTML=h;$("dd").showModal()}
+function click(e){var c=e.target.closest(".card");if(c)openDetail(c.dataset.k,c.dataset.id)}
+function key(e){if(e.key==="Enter"||e.key===" "){var c=e.target.closest(".card");if(c){e.preventDefault();openDetail(c.dataset.k,c.dataset.id)}}}
+["fg","og","g"].forEach(function(i){$(i).onclick=click;$(i).onkeydown=key});
+$("dd").onclick=function(e){if(e.target===$("dd")||(e.target.dataset&&e.target.dataset.a==="close"))$("dd").close()};
+$("ft2").innerHTML=CD.footer();
+
+async function init(){
  var c=await sb.from("catalogue").select("*").order("name");
- var s=await sb.from("user_settings").select("*").eq("user_id",me).maybeSingle();
- var d=await sb.from("catalogue_dismissals").select("catalogue_id,reason").eq("user_id",me);
- if(!user||user.id!==me)return;
- if(c.error){catErr=c.error.message;cat=[]}else{catErr="";cat=c.data||[]}
- settings=s.data||null;
- dismissed={};(d.data||[]).forEach(function(x){dismissed[x.catalogue_id]=x.reason||"x"});
- loaded=true;
- $("tb").hidden=!!(settings&&settings.terms_accepted_at);
- renderRec();
-}
-function openRec(id){
- var x=recList.filter(function(y){return y.r.id===id})[0];if(!x)return;
- var r=x.r,facts=[r.level,r.time,r.cost].filter(Boolean).join(" · "),url=/^https?:\/\//i.test(r.credly_url||"")?r.credly_url:"",
-  sk=String(r.skills||"").split(";").map(function(t){return t.trim()}).filter(Boolean),au=audience(r.access),
-  mail="mailto:"+MAIL+"?subject="+encodeURIComponent("CredDex catalogue issue: "+r.name)+"&body="+encodeURIComponent("Badge: "+r.name+"\nID: "+r.id+"\nLink: "+r.credly_url+"\n\nWhat’s wrong:\n");
- $("drb").innerHTML=badge({issuer:r.issuer,name:r.name,img:/^https:\/\//i.test(r.image_url||"")?r.image_url:""})+'<h2>'+esc(r.name)+'</h2><div class="meta">'+esc(r.issuer)+(r.badge_type?" · "+esc(r.badge_type):"")+'</div>'+(facts?'<div class="meta">'+esc(facts)+'</div>':"")+
-  (r.summary?'<p>'+esc(r.summary)+'</p>':"")+
-  (sk.length?'<div class="tags">'+sk.map(function(t){return '<span class="tag">'+esc(t)+'</span>'}).join("")+'</div>':"")+
-  '<p class="why"><strong>Why you’re seeing this:</strong> '+x.why.map(esc).join("; ")+'.</p>'+
-  (au?'<div class="meta">'+esc(au)+'</div>':"")+
-  (r.checked?'<div class="meta">Last checked '+esc(r.checked)+'</div>':"")+
-  (url?'<p><a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer"><strong>Go to the badge page</strong></a></p>':"")+
-  '<div class="row" id="drr"><button class="btn" data-a="nfm">Not for me</button><a class="btn" href="'+esc(mail)+'" style="text-decoration:none;color:inherit">Report a problem</a><button class="btn pri" data-a="close">Close</button></div>'+
-  '<div class="row" id="nfm" hidden><span class="meta">Hide it because:</span><button class="btn" data-a="dis" data-id="'+esc(r.id)+'" data-r="not_eligible">I’m not eligible</button><button class="btn" data-a="dis" data-id="'+esc(r.id)+'" data-r="not_interested">Not interested</button><button class="btn" data-a="dis" data-id="'+esc(r.id)+'" data-r="">Just hide it</button></div>';
- $("dr").showModal();
-}
-async function dismiss(id,reason){
- var r=await sb.from("catalogue_dismissals").upsert({user_id:user.id,catalogue_id:id,reason:reason||null},{onConflict:"user_id,catalogue_id"});
- if(r.error){toast("Couldn’t hide it: "+r.error.message);return}
- dismissed[id]=reason||"x";$("dr").close();renderRec();toast("Hidden. It won’t come back.")}
-$("recgrid").onclick=function(e){var c=e.target.closest(".card");if(c)openRec(c.dataset.id)};
-$("recgrid").onkeydown=function(e){if(e.key==="Enter"||e.key===" "){var c=e.target.closest(".card");if(c){e.preventDefault();openRec(c.dataset.id)}}};
-$("dr").onclick=function(e){
- var d=e.target.dataset||{};
- if(d.a==="close"||e.target===$("dr"))$("dr").close();
- if(d.a==="nfm"){$("drr").hidden=true;$("nfm").hidden=false}
- if(d.a==="dis")dismiss(d.id,d.r||null);
-};
-$("tba").onclick=async function(){
- var now=new Date().toISOString();
- var r=await sb.from("user_settings").upsert({user_id:user.id,terms_accepted_at:now,updated_at:now},{onConflict:"user_id"});
- if(r.error){toast("Couldn’t save that: "+r.error.message);return}
- settings=Object.assign(settings||{},{terms_accepted_at:now});$("tb").hidden=true;toast("Thanks, saved.")};
-
-/* ---------- profile & settings ---------- */
-function showLink(){
- var u=$("pu").value.trim().toLowerCase().replace(/[^a-z0-9_]/g,""),base=location.origin+location.pathname,th=$("pt").value,ht=Math.min(2000,Math.max(200,parseInt($("ph").value,10)||620));
- $("pl").textContent=u?base+"?u="+u:"";
- $("pe").value=u?'<iframe\n  src="'+base+'?u='+u+'&embed=1'+(th?'&theme='+th:'')+'"\n  title="Credentials of '+u+'"\n  loading="lazy"\n  style="width:100%;height:'+ht+'px;border:0"></iframe>':"";
-}
-$("pt").onchange=showLink;$("ph").oninput=showLink;
-var pTimer;
-$("pu").addEventListener("input",function(){
- clearTimeout(pTimer);var u=this.value.trim().toLowerCase();$("pa").textContent="";
- if(!u)return;
- if(!/^[a-z0-9_]{3,30}$/.test(u)){$("pa").textContent="Use 3–30 lowercase letters, numbers or underscores.";return}
- pTimer=setTimeout(async function(){var r=await sb.rpc("username_available",{u:u});if(!r.error)$("pa").textContent=r.data?"✓ Available":"✗ Taken or reserved"},400)});
-$("pm").onclick=function(){var t=$("pe").value;if(!t){toast("Enter your username first.");return}
- navigator.clipboard.writeText(t).then(function(){toast("Embed code copied")},function(){$("pe").select();toast("Press Ctrl+C to copy.")})};
-async function openShare(){
- var r=await sb.from("profiles").select("*").eq("user_id",user.id).maybeSingle(),d=r.data;
- $("pem").value=user.email||"";$("pu").value=d?d.username:"";$("pn").value=d&&d.display_name||"";$("pv").checked=d?d.is_public:true;showLink();
- var st=settings||{},gl=st.goals||[];
- $("pi").value=st.institution||"";$("pf").value=st.study_field||"";$("pst").value=st.status||"";
- $("pg").innerHTML=allCats().map(function(x){return '<label><input type="checkbox" value="'+esc(x)+'"'+(gl.indexOf(x)>-1?" checked":"")+'> '+esc(x)+'</label>'}).join("");
- $("ptd").textContent=st.terms_accepted_at?"You agreed to the current terms on "+new Date(st.terms_accepted_at).toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"})+".":"You haven’t agreed to the current terms yet.";
- if(!$("ds").open)$("ds").showModal()}
-$("stb").onclick=openShare;
-$("shb").onclick=async function(){
- var r=await sb.from("profiles").select("username,is_public").eq("user_id",user.id).maybeSingle(),d=r.data;
- if(!d||!d.is_public){toast("Set up and save a public profile first.");openShare();return}
- var url=location.origin+location.pathname+"?u="+d.username;
- try{await navigator.clipboard.writeText(url);toast("Link copied: "+url)}catch(e){prompt("Copy your link:",url)}};
-$("pc").onclick=function(){$("ds").close()};
-$("ps").onclick=async function(){
- var u=$("pu").value.trim().toLowerCase();
- if(!/^[a-z0-9_]{3,30}$/.test(u)){toast("Username needs 3–30 letters, numbers or underscores.");return}
- var r=await sb.from("profiles").upsert({user_id:user.id,username:u,display_name:$("pn").value.trim()||null,is_public:$("pv").checked},{onConflict:"user_id"});
- if(r.error){toast(r.error.code==="23505"?"That username is taken. Try another.":r.error.code==="23514"?"That username isn’t allowed. Try another.":"Couldn’t save: "+r.error.message);return}
- toast($("pv").checked?"Saved. Your link is live.":"Saved. Your profile is private.");showLink()};
-$("pss").onclick=async function(){
- var goals=[].slice.call($("pg").querySelectorAll("input:checked")).map(function(i){return i.value});
- var row={user_id:user.id,institution:$("pi").value.trim()||null,study_field:$("pf").value.trim()||null,status:$("pst").value||null,goals:goals,updated_at:new Date().toISOString()};
- var r=await sb.from("user_settings").upsert(row,{onConflict:"user_id"});
- if(r.error){toast("Couldn’t save: "+r.error.message);return}
- settings=Object.assign(settings||{},row);recShown=12;renderRec();toast("Saved. Suggestions updated.")};
-$("prh").onclick=async function(){
- var r=await sb.from("catalogue_dismissals").delete().eq("user_id",user.id);
- if(r.error){toast("Couldn’t reset: "+r.error.message);return}
- dismissed={};renderRec();toast("Hidden suggestions are back.")};
-
-/* ---------- sign in ---------- */
-async function oauth(pv){
- var r=await sb.auth.signInWithOAuth({provider:pv,options:{redirectTo:location.origin+location.pathname}});
- if(r.error)msg(r.error.message)}
-$("gg").onclick=function(){oauth("google")};
-function msg(t){$("dam").textContent=t}
-$("da").oncancel=function(e){e.preventDefault()};
-$("si").onclick=async function(){
- var r=await sb.auth.signInWithPassword({email:$("ae").value.trim(),password:$("ap").value});
- if(r.error)msg(r.error.message)};
-$("su").onclick=async function(){
- var r=await sb.auth.signUp({email:$("ae").value.trim(),password:$("ap").value,options:{emailRedirectTo:location.href.split("#")[0]}});
- if(r.error)msg(r.error.message);else if(!r.data.session)msg("Check your email and confirm your address, then sign in.")};
-$("out").onclick=function(){sb.auth.signOut()};
-if(PUB){["add","out","mig","shb","stb","recb"].forEach(function(i){$(i).hidden=true});loadPublic()}else sb.auth.onAuthStateChange(function(ev,s){
- setTimeout(function(){
-  user=s?s.user:null;$("out").hidden=!user;$("shb").hidden=!user;$("stb").hidden=!user;
-  if(user){if($("da").open)$("da").close();checkMig();refresh();if(recUser!==user.id){recUser=user.id;loaded=false;loadRec()}}
-  else{items=[];recUser=null;loaded=false;settings=null;dismissed={};cat=[];$("tb").hidden=true;render();renderRec();$("ap").value="";if($("ds").open)$("ds").close();if(!$("da").open)$("da").showModal()}
- },0)});
+ if(c.error){$("g").innerHTML='<div class="empty" style="grid-column:1/-1">Credentials couldn’t load right now. '+esc(c.error.message)+'</div>'}else rows=c.data||[];
+ var t=await sb.rpc("public_listed_templates");tpls=t.error?[]:(t.data||[]);
+ var s=await sb.auth.getSession();user=s.data&&s.data.session?s.data.session.user:null;
+ if(user){
+  $("cta").textContent="My CredDex";$("cta2").textContent="Open My CredDex";
+  var a=await sb.from("user_settings").select("goals").eq("user_id",user.id).maybeSingle();goals=(a.data&&a.data.goals)||[];
+  var b=await sb.from("credentials").select("name").eq("user_id",user.id);(b.data||[]).forEach(function(x){held[norm(x.name)]=1});
+  var d=await sb.from("catalogue_dismissals").select("catalogue_id").eq("user_id",user.id);(d.data||[]).forEach(function(x){dismissed[x.catalogue_id]=1})}
+ var known={};rows.forEach(function(r){known[r.category]=1});
+ (qs.get("tags")||"").split("|").forEach(function(k){k=k.trim();if(k&&known[k])cats[k]=true});
+ renderAll();
+ if(location.hash==="#browse")setTimeout(function(){$("browse").scrollIntoView({behavior:CD.smooth()})},60)}
+init();
 })();
 </script>
 </body>
