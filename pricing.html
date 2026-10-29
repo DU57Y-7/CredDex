@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Issue your own badges · CredDex pricing</title>
+<meta name="description" content="Register your school, club or team on CredDex for $10, then $50 per credential with unlimited uses. Optional $5 a month boost.">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="cd.css">
+</head>
+<body>
+<header>
+  <h1><a href="index.html">CredDex</a><small>For schools, clubs and teams</small></h1>
+  <div class="acts"><a class="btn" href="index.html">Browse credentials</a><a class="btn pri" href="app.html">Create your CredDex</a></div>
+</header>
+
+<section class="hero" aria-labelledby="ht">
+  <h2 id="ht">Issue your own verified badges.</h2>
+  <p>Give students, members or staff a credential they own. They can download it, add it to LinkedIn, and anyone can check it is real with one link.</p>
+  <div class="acts"><a class="btn" href="creddex-order-form.pdf" download>Download the order form (PDF)</a><a class="btn ghost" href="mailto:dustinjmcguire@gmail.com?subject=CredDex%20badges%20for%20our%20organisation">Email us</a></div>
+</section>
+
+<main>
+  <section class="sect">
+    <h2>Pricing</h2>
+    <p class="muted">All prices are in Australian dollars.</p>
+    <div class="price">
+      <div class="pcard"><h3>Register your organisation</h3><div class="pamt">$10 <small>one-off</small></div>
+        <p class="muted">Sets up your organisation on CredDex and the people on your team who can issue badges.</p></div>
+      <div class="pcard hl"><h3>Each credential</h3><div class="pamt">$50 <small>per credential</small></div>
+        <p class="muted">We create your badge page, verification links and downloadable badge. <strong>Unlimited uses:</strong> issue it to as many people as you like.</p></div>
+      <div class="pcard"><h3>Boost <span class="muted" style="font-weight:400">(optional)</span></h3><div class="pamt">$5 <small>a month, per badge</small></div>
+        <p class="muted">Your badge is pinned near the top of its topic when people browse CredDex, marked Sponsored.</p></div>
+    </div>
+    <div class="panel"><strong>For example:</strong> a school with three badges pays $10 + 3 × $50 = <strong>$160</strong>. Boosting one of them for a full year adds $60.</div>
+  </section>
+
+  <section class="sect">
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li><strong>Send us your details.</strong> Fill in the order form with your organisation, your badge names, what people do to earn each one, and your artwork.</li>
+      <li><strong>We set it up.</strong> We register your organisation and create each badge, with its own information page and a way to contact you.</li>
+      <li><strong>You issue it.</strong> Your team pastes in email addresses and the badge is issued. There is no limit on how many people can earn it.</li>
+      <li><strong>They claim and share.</strong> Each person signs in to CredDex with that email, adds the badge to their collection, then downloads it, copies the link, or adds it to LinkedIn.</li>
+      <li><strong>Anyone can check it.</strong> Employers open the link and see who issued the badge, when, and whether it is still valid. No sign-in needed.</li>
+    </ol>
+  </section>
+
+  <section class="sect">
+    <h2>What’s included</h2>
+    <ul class="plist">
+      <li>A public information page for every badge, with your description, criteria and a contact button</li>
+      <li>A verification link for every badge issued, which shows valid, revoked or expired</li>
+      <li>A downloadable badge image with the badge details built in</li>
+      <li>Revoking a badge at any time, and optional expiry dates</li>
+      <li>Your badges listed on the CredDex home page, if you choose</li>
+    </ul>
+    <p class="muted">CredDex is free for students and members to use.</p>
+  </section>
+
+  <section class="sect faq">
+    <h2>Questions</h2>
+    <h3>How many people can earn a badge?</h3><p>As many as you like. The $50 is per credential, not per person.</p>
+    <h3>What do you need from us?</h3><p>The details on the order form, and your artwork as a PNG or JPG. Your team issues badges using the email addresses of the people who earned them.</p>
+    <h3>What about students under 18?</h3><p>You are responsible for having any consent you need before you give us email addresses. A person’s name never appears on a badge page.</p>
+    <h3>How do I pay?</h3><p>We confirm your order and send an invoice. Our contact details and payment details are on the order form.</p>
+  </section>
+
+  <section class="sect">
+    <div class="panel"><h2>Ready to start?</h2>
+      <p class="muted" style="margin:0 0 10px">Download the order form, fill it in, and email it back to us.</p>
+      <div class="acts"><a class="btn pri" href="creddex-order-form.pdf" download>Download the order form (PDF)</a><a class="btn" href="mailto:dustinjmcguire@gmail.com?subject=CredDex%20order">Email us</a></div></div>
+  </section>
+</main>
+<footer class="foot" id="ft2"></footer>
+<div id="toast" role="status"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="cd.js"></script>
+<script>CD.$("ft2").innerHTML=CD.footer();</script>
+</body>
+</html>

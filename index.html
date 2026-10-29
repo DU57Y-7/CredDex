@@ -37,7 +37,6 @@
     <input type="search" class="srch" id="q" placeholder="Search by name, issuer or skill" aria-label="Search credentials">
     <div class="chips scroll" id="cl" aria-label="Topic groups"></div>
     <div class="chips" id="sub" aria-label="Topics"></div>
-    <div class="chips" id="gen" aria-label="Popular topics"></div>
     <p class="muted" id="mine" hidden></p>
     <div class="meta" id="cnt" aria-live="polite" style="margin:8px 0"></div>
     <div class="grid" id="g"></div>
@@ -46,8 +45,9 @@
 
   <section class="sect">
     <div class="panel"><h2>Run a school, club or team?</h2>
-    <p class="muted" style="margin:0 0 10px">We can set up your own badges and let you issue them to your students or members through CredDex. Get in touch to find out how it works.</p>
-    <a class="btn" href="mailto:dustinjmcguire@gmail.com?subject=CredDex%20badges%20for%20our%20organisation">Email us</a></div>
+    <p class="muted" style="margin:0 0 8px">Issue your own verified badges to students or members, and let them download and share them. Simple pricing:</p>
+    <ul class="plist"><li><strong>$10</strong> to register your organisation</li><li><strong>$50</strong> per credential, with unlimited uses</li><li><strong>$5 a month</strong> to boost a badge within its topic</li></ul>
+    <div class="acts"><a class="btn pri" href="pricing.html">See pricing and how it works</a><a class="btn" href="mailto:dustinjmcguire@gmail.com?subject=CredDex%20badges%20for%20our%20organisation">Email us</a></div></div>
   </section>
 </main>
 <footer class="foot" id="ft2"></footer>
@@ -60,14 +60,17 @@
 <script>
 (function(){
 var $=CD.$,esc=CD.esc,sb=CD.sb,qs=new URLSearchParams(location.search);
-var rows=[],tpls=[],user=null,held={},dismissed={},goals=[];
+var rows=[],tpls=[],tItems=[],user=null,held={},dismissed={},goals=[];
+var MAXBOOST=4;
 var cluster="",cats={},q="",shown=15,PAGE=15,PER_CAT=4;
 function norm(s){return String(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"")}
 function seed(){if(user)return user.id;try{var s=localStorage.getItem("cd:seed");if(!s){s=Math.random().toString(36).slice(2,10);localStorage.setItem("cd:seed",s)}return s}catch(e){return "x"}}
+function all(){return rows.concat(tItems)}
+function uniq(a){var m={},o=[];a.forEach(function(x){if(x&&!m[x]){m[x]=1;o.push(x)}});return o}
 function visible(r){return !held[norm(r.name)]&&!dismissed[r.id]}
 function selKeys(){return Object.keys(cats)}
 function browsing(){return !!(q||cluster||selKeys().length)}
-function catCount(){var m={};rows.forEach(function(r){if(r.category&&visible(r))m[r.category]=(m[r.category]||0)+1});return m}
+function catCount(){var m={};all().forEach(function(r){if(r.category&&visible(r))m[r.category]=(m[r.category]||0)+1});return m}
 function clusters(){
  var cc=catCount(),known={},l=[];
  CD.CLUSTERS.forEach(function(c){c[1].forEach(function(k){known[k]=1});var k=c[1].filter(function(x){return cc[x]});if(k.length)l.push([c[0],k])});
@@ -80,22 +83,26 @@ function pass(r){
  else if(cluster&&CD.clusterOf(r.category)!==cluster)return false;
  if(q&&(r.name+" "+r.issuer+" "+r.category+" "+r.skills).toLowerCase().indexOf(q)<0)return false;
  return true}
-/* order: starting-point badges first, a fair shuffle within ties, at most PER_CAT per topic before the rest */
+/* order: boosted badges (max MAXBOOST, fairly rotated) first, then starting-point badges, a fair shuffle within ties,
+   and at most PER_CAT per topic before the rest */
 function ordered(list){
- var sd=seed();
- var x=list.map(function(r){var lv=String(r.level||"").toLowerCase();
+ var sd=seed(),pin=[],rest=[];
+ list.forEach(function(r){(r.boosted?pin:rest).push(r)});
+ pin.sort(function(a,b){return CD.hsh(sd+a.id)-CD.hsh(sd+b.id)});
+ var top=pin.slice(0,MAXBOOST),x=rest.concat(pin.slice(MAXBOOST)).map(function(r){var lv=String(r.level||"").toLowerCase();
   var st=(lv==="foundational"||lv==="entry"||r.rung===1)&&!/prerequisite|needs/i.test(r.access||"");
   var rs=/griffith|year 11|apprentice|staff|educators|public sector|participants/i.test(r.access||"");
   return{r:r,s:(st?10:0)-(rs?30:0),h:CD.hsh(sd+r.id)}});
  x.sort(function(a,b){return b.s-a.s||a.h-b.h});
  var seen={},p=[],o=[];x.forEach(function(y){var k=y.r.category;seen[k]=(seen[k]||0)+1;(seen[k]<=PER_CAT?p:o).push(y.r)});
- return p.concat(o)}
+ return top.concat(p,o)}
 function img(r){return /^https:\/\//i.test(r.image_url||"")?r.image_url:""}
 function card(r,feat){
+ if(r.k==="t")return tcard(r.raw);
  var lab=r.sponsored?'<span class="tag lab">Sponsored</span>':(feat?'<span class="tag lab">Featured</span>':"");
  return '<div class="card" tabindex="0" role="button" data-k="c" data-id="'+esc(r.id)+'">'+CD.badge({issuer:r.issuer,name:r.name,img:img(r)})+'<h3>'+esc(r.name)+'</h3><div class="meta">'+esc(r.issuer)+'</div>'+lab+'</div>'}
 function tcard(t){
- return '<div class="card" tabindex="0" role="button" data-k="t" data-id="'+esc(t.id)+'">'+CD.badge({issuer:t.org_name,name:t.name,img:CD.artUrl(t.image_path)})+'<h3>'+esc(t.name)+'</h3><div class="meta">'+esc(t.org_name)+'</div><span class="tag lab">Issued via CredDex</span></div>'}
+ return '<div class="card" tabindex="0" role="button" data-k="t" data-id="'+esc(t.id)+'">'+CD.badge({issuer:t.org_name,name:t.name,img:CD.artUrl(t.image_path)})+'<h3>'+esc(t.name)+'</h3><div class="meta">'+esc(t.org_name)+'</div><span class="tag lab">'+(t.boosted?"Sponsored":"Issued via CredDex")+'</span></div>'}
 function chip(label,on,attr){return '<button class="chip" aria-pressed="'+(on?"true":"false")+'" '+attr+'>'+esc(label)+'</button>'}
 function renderChips(){
  var cl=clusters(),none=!cluster&&!selKeys().length;
@@ -105,8 +112,7 @@ function renderChips(){
  selKeys().forEach(function(k){if(sub.indexOf(k)<0)sub.push(k)});
  $("sub").hidden=!sub.length;
  $("sub").innerHTML=sub.map(function(k){return chip(k,!!cats[k],'data-k="'+esc(k)+'"')}).join("");
- var cc=catCount();
- $("gen").innerHTML=CD.GENERAL.filter(function(g){return cc[g[1]]}).map(function(g){return chip(g[0],!!cats[g[1]],'data-k="'+esc(g[1])+'"')}).join("")}
+ }
 function renderMine(){
  var el=$("mine");if(!user){el.hidden=true;return}
  var sel=selKeys().sort().join("|"),mine=goals.slice().sort().join("|");
@@ -118,7 +124,7 @@ function renderTop(){
  $("feat").hidden=b||!f.length;$("fg").innerHTML=f.map(function(r){return card(r,true)}).join("");
  $("own").hidden=b||!tpls.length;$("og").innerHTML=tpls.map(tcard).join("")}
 function renderGrid(){
- var l=ordered(rows.filter(pass)),n=l.length;
+ var l=ordered(all().filter(pass)),n=l.length;
  $("g").innerHTML=n?l.slice(0,shown).map(function(r){return card(r,false)}).join(""):'<div class="empty" style="grid-column:1/-1">'+(rows.length?"No credentials match. Try another topic or clear the filters.":"Credentials will appear here soon.")+'</div>';
  $("more").hidden=n<=shown;$("cnt").textContent=n?"Showing "+Math.min(shown,n)+" of "+n+(n===1?" credential":" credentials"):""}
 function renderAll(){renderChips();renderMine();renderTop();renderGrid()}
@@ -128,7 +134,7 @@ $("cl").onclick=function(e){var b=e.target.closest(".chip");if(!b)return;
  var c=b.dataset.c;cats={};cluster=(c===""||c===cluster)?"":c;reset()};
 function toggleCat(e){var b=e.target.closest(".chip");if(!b)return;var k=b.dataset.k;if(cats[k])delete cats[k];else cats[k]=true;
  if(!selKeys().length&&cluster==="")cluster="";reset()}
-$("sub").onclick=toggleCat;$("gen").onclick=toggleCat;
+$("sub").onclick=toggleCat;
 $("q").oninput=function(){q=this.value.trim().toLowerCase();reset()};
 $("morb").onclick=function(){shown+=PAGE;renderGrid()};
 $("mine").onclick=function(e){
@@ -144,7 +150,7 @@ function openDetail(kind,id){
  if(kind==="t"){
   var t=tpls.filter(function(x){return x.id===id})[0];if(!t)return;
   var sk=String(t.skills||"").split(";").map(function(s){return s.trim()}).filter(Boolean);
-  h=CD.badge({issuer:t.org_name,name:t.name,img:CD.artUrl(t.image_path)})+'<h2>'+esc(t.name)+'</h2><div class="meta">Issued by '+esc(t.org_name)+' through CredDex</div>'+
+  h=CD.badge({issuer:t.org_name,name:t.name,img:CD.artUrl(t.image_path)})+'<h2>'+esc(t.name)+'</h2><div class="meta">Issued by '+esc(t.org_name)+' through CredDex'+(t.boosted?" · Sponsored":"")+'</div>'+
    (t.description?'<p>'+esc(t.description)+'</p>':"")+(t.criteria?'<p class="meta"><strong>To earn it:</strong> '+esc(t.criteria)+'</p>':"")+
    (sk.length?'<div class="tags">'+sk.map(function(s){return '<span class="tag">'+esc(s)+'</span>'}).join("")+'</div>':"")+
    '<p class="meta">This badge is awarded by '+esc(t.org_name)+'.</p><p><a href="badge.html?t='+encodeURIComponent(t.id)+'"><strong>More details and contact the issuer</strong></a></p>'}
@@ -166,16 +172,17 @@ $("ft2").innerHTML=CD.footer();
 
 async function init(){
  var c=await sb.from("catalogue").select("*").order("name");
- if(c.error){$("g").innerHTML='<div class="empty" style="grid-column:1/-1">Credentials couldn’t load right now. '+esc(c.error.message)+'</div>'}else rows=c.data||[];
+ if(c.error){$("g").innerHTML='<div class="empty" style="grid-column:1/-1">Credentials couldn’t load right now. '+esc(c.error.message)+'</div>'}else{rows=c.data||[];rows.forEach(function(r){r.k="c";r.category=CD.topic(r.category)})}
  var t=await sb.rpc("public_listed_templates");tpls=t.error?[]:(t.data||[]);
+ tItems=tpls.map(function(t){return{k:"t",id:t.id,raw:t,name:t.name,issuer:t.org_name,category:CD.topic(t.category||""),skills:t.skills||"",level:t.level||"",boosted:!!t.boosted}});
  var s=await sb.auth.getSession();user=s.data&&s.data.session?s.data.session.user:null;
  if(user){
   $("cta").textContent="My CredDex";$("cta2").textContent="Open My CredDex";
-  var a=await sb.from("user_settings").select("goals").eq("user_id",user.id).maybeSingle();goals=(a.data&&a.data.goals)||[];
+  var a=await sb.from("user_settings").select("goals").eq("user_id",user.id).maybeSingle();goals=uniq(((a.data&&a.data.goals)||[]).map(CD.topic));
   var b=await sb.from("credentials").select("name").eq("user_id",user.id);(b.data||[]).forEach(function(x){held[norm(x.name)]=1});
   var d=await sb.from("catalogue_dismissals").select("catalogue_id").eq("user_id",user.id);(d.data||[]).forEach(function(x){dismissed[x.catalogue_id]=1})}
- var known={};rows.forEach(function(r){known[r.category]=1});
- (qs.get("tags")||"").split("|").forEach(function(k){k=k.trim();if(k&&known[k])cats[k]=true});
+ var known={};all().forEach(function(r){known[r.category]=1});
+ (qs.get("tags")||"").split("|").forEach(function(k){k=CD.topic(k.trim());if(k&&known[k])cats[k]=true});
  renderAll();
  if(location.hash==="#browse")setTimeout(function(){$("browse").scrollIntoView({behavior:CD.smooth()})},60)}
 init();

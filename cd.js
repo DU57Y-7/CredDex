@@ -26,17 +26,20 @@ document.addEventListener("error",function(ev){var t=ev.target;
 CD.artUrl=function(p){return p?CD.sb.storage.from("badge-art").getPublicUrl(p).data.publicUrl:""};
 CD.safeUrl=function(u){return /^https?:\/\//i.test(u||"")?u:""};
 
-/* Category list and the clusters used for browsing. New categories that aren't listed here land in "Other". */
-CD.CATS=["AI & Machine Learning","CAD & Design","Communication & Service","Cloud","Cyber Security","Data Engineering","Employability & Pathways","Engineering Practice","Finance & Business","Leadership & Mentoring","Manufacturing & Making","Programming & Numerical Computing","Project Management","Risk & Safety","Simulation & Analysis","Software & DevOps","Sustainability & Climate","Teaching & Learning"];
+/* Topics (what people browse by) and the groups they sit under. Older category names are mapped onto these,
+   so nothing breaks if the database still holds the old names. Anything not listed lands in "Other". */
+CD.TOPIC={"CAD & Design":"Design & Making","Manufacturing & Making":"Design & Making","Risk & Safety":"Engineering Practice",
+ "Programming & Numerical Computing":"Programming & Software","Software & DevOps":"Programming & Software","Cloud":"Cloud & Data","Data Engineering":"Cloud & Data",
+ "Leadership & Mentoring":"Leadership","Finance & Business":"Business & Finance","Communication & Service":"Communication & Teaching","Teaching & Learning":"Communication & Teaching",
+ "Employability & Pathways":"Careers & Employability","Sustainability & Climate":"Sustainability"};
+CD.topic=function(c){c=String(c||"");return CD.TOPIC[c]||c};
 CD.CLUSTERS=[
- ["Engineering",["CAD & Design","Simulation & Analysis","Programming & Numerical Computing","Engineering Practice","Manufacturing & Making","Risk & Safety"]],
- ["Technology",["Software & DevOps","Cloud","Cyber Security","Data Engineering","AI & Machine Learning"]],
- ["Business",["Finance & Business","Project Management","Leadership & Mentoring"]],
- ["People & Skills",["Teaching & Learning","Communication & Service","Employability & Pathways"]],
- ["Sustainability",["Sustainability & Climate"]]
+ ["Engineering",["Design & Making","Simulation & Analysis","Engineering Practice"]],
+ ["Technology",["Programming & Software","Cloud & Data","AI & Machine Learning","Cyber Security"]],
+ ["Business",["Leadership","Project Management","Business & Finance"]],
+ ["People & Planet",["Communication & Teaching","Careers & Employability","Sustainability"]]
 ];
-/* general, cross-cutting shortcuts: label -> category */
-CD.GENERAL=[["AI","AI & Machine Learning"],["Leadership","Leadership & Mentoring"],["Communication","Communication & Service"],["Project management","Project Management"],["Cyber security","Cyber Security"],["Employability","Employability & Pathways"]];
+CD.CATS=[].concat.apply([],CD.CLUSTERS.map(function(c){return c[1]}));
 CD.clusterOf=function(cat){for(var i=0;i<CD.CLUSTERS.length;i++)if(CD.CLUSTERS[i][1].indexOf(cat)>-1)return CD.CLUSTERS[i][0];return "Other"};
 CD.audience=function(a){
  if(!a)return "";
@@ -46,6 +49,6 @@ CD.audience=function(a){
  else t="Usually for: "+t;
  return t+(chk?" · not confirmed, check the badge page":"")};
 CD.fmtDate=function(d){if(!d)return "";var x=new Date(d+"T00:00:00");return isNaN(x)?d:x.toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"})};
-CD.footer=function(){return '<a href="index.html">Home</a> · <a href="creddex-terms.html">Terms</a> · <a href="creddex-privacy.html">Privacy</a>'};
+CD.footer=function(){return '<a href="index.html">Home</a> · <a href="pricing.html">For organisations</a> · <a href="creddex-terms.html">Terms</a> · <a href="creddex-privacy.html">Privacy</a>'};
 w.CD=CD;
 })(window);

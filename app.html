@@ -144,7 +144,9 @@ document.addEventListener("error",function(e){var t=e.target;
  if(t&&t.tagName==="IMG"&&t.dataset&&t.dataset.n!==undefined){var d=document.createElement("div");d.innerHTML=badge({issuer:t.dataset.i,name:t.dataset.n});if(d.firstChild)t.replaceWith(d.firstChild)}},true);
 var pubMsg="",items=[],sel={},editing=null,pendingImg="",imgChanged=false,user=null;
 /* recommendations state */
-var CATS=["AI & Machine Learning","CAD & Design","Communication & Service","Cloud","Cyber Security","Data Engineering","Employability & Pathways","Engineering Practice","Finance & Business","Leadership & Mentoring","Manufacturing & Making","Programming & Numerical Computing","Project Management","Risk & Safety","Simulation & Analysis","Software & DevOps","Sustainability & Climate","Teaching & Learning"];
+var TOPIC={"CAD & Design":"Design & Making","Manufacturing & Making":"Design & Making","Risk & Safety":"Engineering Practice","Programming & Numerical Computing":"Programming & Software","Software & DevOps":"Programming & Software","Cloud":"Cloud & Data","Data Engineering":"Cloud & Data","Leadership & Mentoring":"Leadership","Finance & Business":"Business & Finance","Communication & Service":"Communication & Teaching","Teaching & Learning":"Communication & Teaching","Employability & Pathways":"Careers & Employability","Sustainability & Climate":"Sustainability"};
+function topic(c){c=String(c||"");return TOPIC[c]||c}
+var CATS=["Design & Making","Simulation & Analysis","Engineering Practice","Programming & Software","Cloud & Data","AI & Machine Learning","Cyber Security","Leadership","Project Management","Business & Finance","Communication & Teaching","Careers & Employability","Sustainability"];
 var BASE=location.origin+location.pathname.replace(/[^\/]*$/,"");
 var cat=[],catErr="",settings=null,dismissed={},recUser=null,loaded=false,recList=[],recShown=15;
 function tagsHtml(c){return(c.tags&&c.tags.length)?'<div class="tags">'+c.tags.map(function(t){return '<span class="tag">'+esc(t)+'</span>'}).join("")+'</div>':""}
@@ -165,10 +167,10 @@ async function refresh(owner){
  if(r.error){pubMsg="Couldn’t load credentials: "+r.error.message;toast("Couldn’t load your collection: "+r.error.message);render();return}
  var paths=r.data.filter(function(x){return x.badge_path}).map(function(x){return x.badge_path}),urls={};
  if(paths.length){var s=await sb.storage.from("badges").createSignedUrls(paths,3600);(s.data||[]).forEach(function(u){urls[u.path]=u.signedUrl})}
- items=r.data.map(function(x){return{id:x.id,name:x.name,issuer:x.issuer,date:x.earned_on||"",desc:x.description||"",url:x.evidence_url||"",tags:x.tags||[],path:x.badge_path,hidden:!!x.hidden,cat:x.category||"",pe:!!x.past_event,img:urls[x.badge_path]||""}});
+ items=r.data.map(function(x){return{id:x.id,name:x.name,issuer:x.issuer,date:x.earned_on||"",desc:x.description||"",url:x.evidence_url||"",tags:x.tags||[],path:x.badge_path,hidden:!!x.hidden,cat:topic(x.category||""),pe:!!x.past_event,img:urls[x.badge_path]||""}});
  var vr=owner?await sb.rpc("public_issued_badges",{p_username:PUB.toLowerCase()}):await sb.rpc("my_issued_badges");
  (vr.data||[]).forEach(function(x){
-  items.push({id:"v"+x.id,ver:true,raw:x,name:x.name,issuer:x.org_name,date:x.issued_on||"",desc:x.description||"",url:BASE+"verify.html?c="+x.verify_code,tags:["Verified"].concat(x.status==="revoked"?["Revoked"]:[]),hidden:false,cat:x.category||"",pe:false,
+  items.push({id:"v"+x.id,ver:true,raw:x,name:x.name,issuer:x.org_name,date:x.issued_on||"",desc:x.description||"",url:BASE+"verify.html?c="+x.verify_code,tags:["Verified"].concat(x.status==="revoked"?["Revoked"]:[]),hidden:false,cat:topic(x.category||""),pe:false,
    img:x.image_path?sb.storage.from("badge-art").getPublicUrl(x.image_path).data.publicUrl:""})});
  render();renderRec();
 }
@@ -306,12 +308,12 @@ $("mig").onclick=async function(){
 function norm(s){return String(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"")}
 function urlKey(u){return String(u||"").toLowerCase().replace(/^https?:\/\/(www\.)?/,"").split(/[?#]/)[0].replace(/\/+$/,"")}
 var FIELDS=[
- [/engineer/i,["CAD & Design","Simulation & Analysis","Programming & Numerical Computing","Engineering Practice","Project Management","Risk & Safety"]],
- [/comput|software|information tech|\bit\b|informatics|data/i,["Software & DevOps","Cloud","AI & Machine Learning","Data Engineering","Cyber Security","Programming & Numerical Computing"]],
- [/business|commerce|financ|account|econom|manage/i,["Finance & Business","Leadership & Mentoring","Project Management","Communication & Service"]],
- [/educat|teach/i,["Teaching & Learning","Communication & Service"]],
- [/environment|sustainab|climate|science/i,["Sustainability & Climate","Employability & Pathways"]],
- [/design|architect|manufactur/i,["CAD & Design","Manufacturing & Making"]]
+ [/engineer/i,["Design & Making","Simulation & Analysis","Engineering Practice","Programming & Software","Project Management"]],
+ [/comput|software|information tech|\bit\b|informatics|data/i,["Programming & Software","Cloud & Data","AI & Machine Learning","Cyber Security"]],
+ [/business|commerce|financ|account|econom|manage/i,["Business & Finance","Leadership","Project Management","Communication & Teaching"]],
+ [/educat|teach/i,["Communication & Teaching","Careers & Employability"]],
+ [/environment|sustainab|climate|science/i,["Sustainability","Careers & Employability"]],
+ [/design|architect|manufactur/i,["Design & Making"]]
 ];
 function fieldCats(f){var o=[];FIELDS.forEach(function(x){if(x[0].test(f))x[1].forEach(function(k){if(o.indexOf(k)<0)o.push(k)})});return o}
 /* Eligibility is a hint, not a rule: a mismatch only lowers the rank, it never hides a badge. */
@@ -376,7 +378,7 @@ function homeTags(){var st=settings||{};var g=(st.goals||[]).slice();if(!g.lengt
 function renderRec(){
  var sec=$("rec");
  if(PUB||!user||!loaded){sec.hidden=true;$("recb").hidden=true;return}
- sec.hidden=false;$("recb").hidden=false;
+ sec.hidden=false;$("recb").hidden=items.length<9;
  var g=$("recgrid"),n=$("recnote");
  if(catErr){n.textContent="Recommendations couldn’t load: "+catErr;g.innerHTML="";$("more").hidden=true;return}
  var has=settings&&(settings.study_field||(settings.goals&&settings.goals.length));
@@ -409,8 +411,8 @@ async function loadRec(){
  var s=await sb.from("user_settings").select("*").eq("user_id",me).maybeSingle();
  var d=await sb.from("catalogue_dismissals").select("catalogue_id,reason").eq("user_id",me);
  if(!user||user.id!==me)return;
- if(c.error){catErr=c.error.message;cat=[]}else{catErr="";cat=c.data||[]}
- settings=s.data||null;
+ if(c.error){catErr=c.error.message;cat=[]}else{catErr="";cat=(c.data||[]).map(function(r){r.category=topic(r.category);return r})}
+ settings=s.data||null;if(settings&&settings.goals){var gm={};settings.goals=settings.goals.map(topic).filter(function(g){return g&&!gm[g]&&(gm[g]=1)})}
  dismissed={};(d.data||[]).forEach(function(x){dismissed[x.catalogue_id]=x.reason||"x"});
  loaded=true;
  $("tb").hidden=!!(settings&&settings.terms_accepted_at);

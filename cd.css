@@ -142,3 +142,15 @@ dialog{max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px)}
  .more .btn{width:100%}
 }
 @media (max-width:360px){.grid{grid-template-columns:1fr}}
+
+.plist{margin:0 0 12px;padding-left:20px}.plist li{margin:4px 0}
+.price{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:14px 0}
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.pcard.hl{border-color:var(--acc);border-width:2px}
+.pcard h3{margin:0 0 4px;font-size:17px}
+.pamt{font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.pamt small{font-size:15px;font-weight:600;color:var(--mute)}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0}
+.steps li{counter-increment:s;position:relative;padding:8px 0 8px 40px}
+.steps li::before{content:counter(s);position:absolute;left:0;top:6px;width:28px;height:28px;border-radius:50%;background:var(--acc);color:var(--accink);display:flex;align-items:center;justify-content:center;font-weight:700}
+.faq h3{margin:14px 0 2px;font-size:16px}.faq p{margin:0;color:var(--mute)}

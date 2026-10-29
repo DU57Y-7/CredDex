@@ -72,6 +72,7 @@
         <label>Artwork (PNG, JPG or WebP)<input id="tfile" type="file" accept="image/*"></label>
         <label class="chk"><input id="tli" type="checkbox"> Show on the CredDex home page</label>
         <label class="chk"><input id="tpd" type="checkbox"> Setup fee paid</label>
+        <label>Boosted until (leave empty for no boost)<input id="tbu" type="date"></label>
         <label>Setup notes (private)<input id="tno" maxlength="300"></label>
         <div class="row"><button class="btn" id="tcx" hidden>Cancel edit</button><button class="btn pri" id="tsv">Save badge</button></div></div></div>
     </section>
@@ -201,14 +202,14 @@ $("ma").onclick=async function(){
 function renderTpls(){
  $("ton").textContent=org?org.name:"(choose an organisation)";
  $("tcat").innerHTML='<option value="">Not set</option>'+CD.CATS.map(function(c){return '<option>'+esc(c)+'</option>'}).join("");
- $("tl").innerHTML=tpls.length?tpls.map(function(t){return '<div class="li"><div class="top2"><strong>'+esc(t.name)+'</strong><span class="muted">'+(t.active?"Active":"Inactive")+(t.listed?" · on home page":"")+(t.setup_paid?" · paid":" · setup unpaid")+'</span></div><div class="acts"><button class="btn sm" data-a="ed" data-id="'+esc(t.id)+'">Edit</button><button class="btn sm" data-a="ac" data-id="'+esc(t.id)+'">'+(t.active?"Deactivate":"Activate")+'</button><button class="btn sm del" data-a="dl" data-id="'+esc(t.id)+'">Delete</button></div></div>'}).join(""):'<p class="muted">No badges yet. Create the first one below.</p>';
+ $("tl").innerHTML=tpls.length?tpls.map(function(t){return '<div class="li"><div class="top2"><strong>'+esc(t.name)+'</strong><span class="muted">'+(t.active?"Active":"Inactive")+(t.listed?" · on home page":"")+(t.setup_paid?" · paid":" · setup unpaid")+(t.boosted_until?" · boosted until "+CD.fmtDate(t.boosted_until):"")+'</span></div><div class="acts"><button class="btn sm" data-a="ed" data-id="'+esc(t.id)+'">Edit</button><button class="btn sm" data-a="ac" data-id="'+esc(t.id)+'">'+(t.active?"Deactivate":"Activate")+'</button><button class="btn sm del" data-a="dl" data-id="'+esc(t.id)+'">Delete</button></div></div>'}).join(""):'<p class="muted">No badges yet. Create the first one below.</p>';
  resetForm()}
 function resetForm(){editT=null;imgData="";$("tft").textContent="Create a badge";$("tcx").hidden=true;
- ["tn","td","tc","ts","tno"].forEach(function(i){$(i).value=""});$("tcat").value="";$("tlv").value="";$("tfile").value="";$("tli").checked=false;$("tpd").checked=false}
+ ["tn","td","tc","ts","tno"].forEach(function(i){$(i).value=""});$("tcat").value="";$("tlv").value="";$("tfile").value="";$("tli").checked=false;$("tpd").checked=false;$("tbu").value=""}
 $("tcx").onclick=resetForm;
 $("tl").onclick=async function(e){var b=e.target.closest("button");if(!b)return;var t=tpls.filter(function(x){return x.id===b.dataset.id})[0];if(!t)return;
  if(b.dataset.a==="ed"){editT=t.id;imgData="";$("tft").textContent="Edit badge";$("tcx").hidden=false;
-  $("tn").value=t.name;$("td").value=t.description||"";$("tc").value=t.criteria||"";$("ts").value=t.skills||"";$("tcat").value=t.category||"";$("tlv").value=t.level||"";$("tfile").value="";$("tli").checked=!!t.listed;$("tpd").checked=!!t.setup_paid;$("tno").value=t.setup_notes||"";
+  $("tn").value=t.name;$("td").value=t.description||"";$("tc").value=t.criteria||"";$("ts").value=t.skills||"";$("tcat").value=CD.topic(t.category||"");$("tlv").value=t.level||"";$("tfile").value="";$("tli").checked=!!t.listed;$("tpd").checked=!!t.setup_paid;$("tbu").value=t.boosted_until||"";$("tno").value=t.setup_notes||"";
   $("tft").scrollIntoView({behavior:CD.smooth()})}
  if(b.dataset.a==="ac"){var r=await sb.from("badge_templates").update({active:!t.active}).eq("id",t.id);if(r.error){toast(r.error.message);return}await loadTpls();renderTpls()}
  if(b.dataset.a==="dl"){if(!confirm("Delete this badge template?"))return;
@@ -230,7 +231,7 @@ $("tsv").onclick=async function(){
   var u=await sb.storage.from("badge-art").upload(p,blob,{contentType:"image/png"});
   if(u.error){b.disabled=false;toast("Artwork didn’t upload: "+u.error.message);return}
   if(path)await sb.storage.from("badge-art").remove([path]);path=p}
- var row={org_id:org.id,name:n,description:$("td").value.trim()||null,criteria:$("tc").value.trim()||null,skills:$("ts").value.trim()||null,category:$("tcat").value||null,level:$("tlv").value||null,image_path:path,listed:$("tli").checked,setup_paid:$("tpd").checked,setup_notes:$("tno").value.trim()||null};
+ var row={org_id:org.id,name:n,description:$("td").value.trim()||null,criteria:$("tc").value.trim()||null,skills:$("ts").value.trim()||null,category:$("tcat").value||null,level:$("tlv").value||null,image_path:path,listed:$("tli").checked,setup_paid:$("tpd").checked,boosted_until:$("tbu").value||null,setup_notes:$("tno").value.trim()||null};
  var r=editT?await sb.from("badge_templates").update(row).eq("id",editT):await sb.from("badge_templates").insert(row);
  b.disabled=false;if(r.error){toast("Couldn’t save: "+r.error.message);return}
  await loadTpls();renderTpls();toast("Badge saved")};
