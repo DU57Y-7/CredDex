@@ -154,3 +154,6 @@ dialog{max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px)}
 .steps li{counter-increment:s;position:relative;padding:8px 0 8px 40px}
 .steps li::before{content:counter(s);position:absolute;left:0;top:6px;width:28px;height:28px;border-radius:50%;background:var(--acc);color:var(--accink);display:flex;align-items:center;justify-content:center;font-weight:700}
 .faq h3{margin:14px 0 2px;font-size:16px}.faq p{margin:0;color:var(--mute)}
+
+.card.pinned{position:relative;border-color:var(--acc)}
+.pin{position:absolute;top:8px;right:8px;width:18px;height:18px;color:var(--acc)}

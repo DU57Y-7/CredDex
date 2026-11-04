@@ -34,10 +34,11 @@ CD.TOPIC={"CAD & Design":"Design & Making","Manufacturing & Making":"Design & Ma
  "Employability & Pathways":"Careers & Employability","Sustainability & Climate":"Sustainability"};
 CD.topic=function(c){c=String(c||"");return CD.TOPIC[c]||c};
 CD.CLUSTERS=[
- ["Engineering",["Design & Making","Simulation & Analysis","Engineering Practice"]],
+ ["Engineering",["Design & Making","Simulation & Analysis","Engineering Practice","Automation & Robotics"]],
  ["Technology",["Programming & Software","Cloud & Data","AI & Machine Learning","Cyber Security"]],
+ ["Industry",["Energy & Clean Tech","Resources & Agriculture"]],
  ["Business",["Leadership","Project Management","Business & Finance"]],
- ["People & Planet",["Communication & Teaching","Careers & Employability","Sustainability"]]
+ ["People & Planet",["Communication & Teaching","Careers & Employability","Community & Inclusion","Sustainability"]]
 ];
 CD.CATS=[].concat.apply([],CD.CLUSTERS.map(function(c){return c[1]}));
 CD.clusterOf=function(cat){for(var i=0;i<CD.CLUSTERS.length;i++)if(CD.CLUSTERS[i][1].indexOf(cat)>-1)return CD.CLUSTERS[i][0];return "Other"};

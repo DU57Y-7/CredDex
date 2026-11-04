@@ -61,13 +61,15 @@
 (function(){
 var $=CD.$,esc=CD.esc,sb=CD.sb,qs=new URLSearchParams(location.search);
 var rows=[],tpls=[],tItems=[],user=null,held={},dismissed={},goals=[];
-var MAXBOOST=4;
+var MAXBOOST=4,PER_ISSUER=3;
 var cluster="",cats={},q="",shown=15,PAGE=15,PER_CAT=4;
 function norm(s){return String(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"")}
 function seed(){if(user)return user.id;try{var s=localStorage.getItem("cd:seed");if(!s){s=Math.random().toString(36).slice(2,10);localStorage.setItem("cd:seed",s)}return s}catch(e){return "x"}}
 function all(){return rows.concat(tItems)}
 function uniq(a){var m={},o=[];a.forEach(function(x){if(x&&!m[x]){m[x]=1;o.push(x)}});return o}
-function visible(r){return !held[norm(r.name)]&&!dismissed[r.id]}
+function clean(x){return norm(String(x||"").replace(/\([^)]*\)/g,""))}
+function codeOf(x){var m=String(x||"").match(/\bMC[AC]\d{5}\b/i);return m?m[0].toLowerCase():""}
+function visible(r){var k=codeOf(r.credly_url);return !held[clean(r.name)]&&!(k&&held[k])&&!dismissed[r.id]}
 function selKeys(){return Object.keys(cats)}
 function browsing(){return !!(q||cluster||selKeys().length)}
 function catCount(){var m={};all().forEach(function(r){if(r.category&&visible(r))m[r.category]=(m[r.category]||0)+1});return m}
@@ -94,7 +96,7 @@ function ordered(list){
   var rs=/griffith|year 11|apprentice|staff|educators|public sector|participants/i.test(r.access||"");
   return{r:r,s:(st?10:0)-(rs?30:0),h:CD.hsh(sd+r.id)}});
  x.sort(function(a,b){return b.s-a.s||a.h-b.h});
- var seen={},p=[],o=[];x.forEach(function(y){var k=y.r.category;seen[k]=(seen[k]||0)+1;(seen[k]<=PER_CAT?p:o).push(y.r)});
+ var seen={},si={},p=[],o=[];x.forEach(function(y){var k=y.r.category,v=y.r.issuer;seen[k]=(seen[k]||0)+1;si[v]=(si[v]||0)+1;(seen[k]<=PER_CAT&&si[v]<=PER_ISSUER?p:o).push(y.r)});
  return top.concat(p,o)}
 function img(r){return /^https:\/\//i.test(r.image_url||"")?r.image_url:""}
 function card(r,feat){
@@ -179,7 +181,7 @@ async function init(){
  if(user){
   $("cta").textContent="My CredDex";$("cta2").textContent="Open My CredDex";
   var a=await sb.from("user_settings").select("goals").eq("user_id",user.id).maybeSingle();goals=uniq(((a.data&&a.data.goals)||[]).map(CD.topic));
-  var b=await sb.from("credentials").select("name").eq("user_id",user.id);(b.data||[]).forEach(function(x){held[norm(x.name)]=1});
+  var b=await sb.from("credentials").select("name,evidence_url,description").eq("user_id",user.id);(b.data||[]).forEach(function(x){held[clean(x.name)]=1;var k=codeOf(x.name+" "+x.evidence_url+" "+x.description);if(k)held[k]=1});
   var d=await sb.from("catalogue_dismissals").select("catalogue_id").eq("user_id",user.id);(d.data||[]).forEach(function(x){dismissed[x.catalogue_id]=1})}
  var known={};all().forEach(function(r){known[r.category]=1});
  (qs.get("tags")||"").split("|").forEach(function(k){k=CD.topic(k.trim());if(k&&known[k])cats[k]=true});

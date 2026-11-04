@@ -146,8 +146,10 @@ var pubMsg="",items=[],sel={},editing=null,pendingImg="",imgChanged=false,user=n
 /* recommendations state */
 var TOPIC={"CAD & Design":"Design & Making","Manufacturing & Making":"Design & Making","Risk & Safety":"Engineering Practice","Programming & Numerical Computing":"Programming & Software","Software & DevOps":"Programming & Software","Cloud":"Cloud & Data","Data Engineering":"Cloud & Data","Leadership & Mentoring":"Leadership","Finance & Business":"Business & Finance","Communication & Service":"Communication & Teaching","Teaching & Learning":"Communication & Teaching","Employability & Pathways":"Careers & Employability","Sustainability & Climate":"Sustainability"};
 function topic(c){c=String(c||"");return TOPIC[c]||c}
-var CATS=["Design & Making","Simulation & Analysis","Engineering Practice","Programming & Software","Cloud & Data","AI & Machine Learning","Cyber Security","Leadership","Project Management","Business & Finance","Communication & Teaching","Careers & Employability","Sustainability"];
+var CATS=["Design & Making","Simulation & Analysis","Engineering Practice","Automation & Robotics","Programming & Software","Cloud & Data","AI & Machine Learning","Cyber Security","Energy & Clean Tech","Resources & Agriculture","Leadership","Project Management","Business & Finance","Communication & Teaching","Careers & Employability","Community & Inclusion","Sustainability"];
 var BASE=location.origin+location.pathname.replace(/[^\/]*$/,"");
+var pins={};
+var PINSVG='<svg class="pin" viewBox="0 0 24 24" role="img" aria-label="Pinned"><path fill="currentColor" d="M16 3l5 5-3 1-3.5 3.5.5 4.5-1.5 1.5-3.5-3.5L6 20l-1-1 4.5-4.5L6 11l1.5-1.5 4.5.5L15.500 6.500z"/></svg>';
 var cat=[],catErr="",settings=null,dismissed={},recUser=null,loaded=false,recList=[],recShown=15;
 function tagsHtml(c){return(c.tags&&c.tags.length)?'<div class="tags">'+c.tags.map(function(t){return '<span class="tag">'+esc(t)+'</span>'}).join("")+'</div>':""}
 function allTags(){var m={};items.forEach(function(c){(c.tags||[]).forEach(function(t){m[t]=1})});return Object.keys(m).sort(function(a,b){return a.localeCompare(b)})}
@@ -168,6 +170,8 @@ async function refresh(owner){
  var paths=r.data.filter(function(x){return x.badge_path}).map(function(x){return x.badge_path}),urls={};
  if(paths.length){var s=await sb.storage.from("badges").createSignedUrls(paths,3600);(s.data||[]).forEach(function(u){urls[u.path]=u.signedUrl})}
  items=r.data.map(function(x){return{id:x.id,name:x.name,issuer:x.issuer,date:x.earned_on||"",desc:x.description||"",url:x.evidence_url||"",tags:x.tags||[],path:x.badge_path,hidden:!!x.hidden,cat:topic(x.category||""),pe:!!x.past_event,img:urls[x.badge_path]||""}});
+  var pr=await sb.from("profile_pins").select("item_id,position").eq("user_id",owner||user.id);
+ pins={};(pr.data||[]).forEach(function(x){pins[x.item_id]=x.position});
  var vr=owner?await sb.rpc("public_issued_badges",{p_username:PUB.toLowerCase()}):await sb.rpc("my_issued_badges");
  (vr.data||[]).forEach(function(x){
   items.push({id:"v"+x.id,ver:true,raw:x,name:x.name,issuer:x.org_name,date:x.issued_on||"",desc:x.description||"",url:BASE+"verify.html?c="+x.verify_code,tags:["Verified"].concat(x.status==="revoked"?["Revoked"]:[]),hidden:false,cat:topic(x.category||""),pe:false,
@@ -182,8 +186,10 @@ function render(){
   if(s==="az")return x.name.localeCompare(y.name);
   if(s==="iss")return x.issuer.localeCompare(y.issuer);
   var r=(y.date||"").localeCompare(x.date||"");return s==="old"?-r:r});
+ var pn=list.filter(function(x){return pins[x.id]}).sort(function(x,y){return pins[x.id]-pins[y.id]});
+ list=pn.concat(list.filter(function(x){return !pins[x.id]}));
  $("grid").innerHTML=list.map(function(c){
-  return '<div class="card" tabindex="0" role="button" data-id="'+esc(c.id)+'">'+badge(c)+'<h3>'+esc(c.name)+'</h3><div class="meta">'+esc(c.issuer)+(c.date?" · "+esc(fmt(c.date)):"")+'</div>'+tagsHtml(c)+'</div>'}).join("");
+  return '<div class="card'+(pins[c.id]?" pinned":"")+'" tabindex="0" role="button" data-id="'+esc(c.id)+'">'+(pins[c.id]?PINSVG:"")+badge(c)+'<h3>'+esc(c.name)+'</h3><div class="meta">'+esc(c.issuer)+(c.date?" · "+esc(fmt(c.date)):"")+'</div>'+tagsHtml(c)+'</div>'}).join("");
  $("count").textContent=list.length+(list.length===items.length?"":" of "+items.length)+(items.length===1?" credential":" credentials");
  var e=$("empty");e.hidden=list.length>0||(!user&&!PUB);
  e.textContent=items.length?"No credentials match. Clear the search or tag filter.":(PUB?"No public credentials yet.":"Your collection is empty. Add your first credential.");
@@ -214,7 +220,7 @@ function open(id){
  var url=/^https?:\/\//i.test(c.url||"")?c.url:"";
  $("dvb").innerHTML=badge(c)+'<h2>'+esc(c.name)+'</h2><div class="meta">'+esc(c.issuer)+(c.date?" · "+esc(fmt(c.date)):"")+'</div>'+(c.pe?'<div class="meta">Past event or one-off</div>':"")+(c.ver?'<div class="meta">Verified credential issued through CredDex</div>':"")+(c.desc?'<p>'+esc(c.desc)+'</p>':"")+tagsHtml(c)+
   (c.ver?verActions(c):(url?'<p><a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">View evidence</a></p>':""))+
-  '<div class="row">'+(PUB||c.ver?"":'<button class="btn del" data-a="del" data-id="'+esc(id)+'">Delete</button><button class="btn" data-a="edit" data-id="'+esc(id)+'">Edit</button>')+'<button class="btn pri" data-a="close">Close</button></div>';
+  '<div class="row">'+(PUB?"":'<button class="btn" data-a="pin" data-id="'+esc(id)+'">'+(pins[id]?"Unpin":"Pin to top")+'</button>')+(PUB||c.ver?"":'<button class="btn del" data-a="del" data-id="'+esc(id)+'">Delete</button><button class="btn" data-a="edit" data-id="'+esc(id)+'">Edit</button>')+'<button class="btn pri" data-a="close">Close</button></div>';
  $("dv").showModal();
 }
 $("grid").onclick=function(e){var c=e.target.closest(".card");if(c)open(c.dataset.id)};
@@ -223,6 +229,12 @@ $("dv").onclick=async function(e){
  var a=e.target.dataset&&e.target.dataset.a,id=e.target.dataset&&e.target.dataset.id;
  if(a==="close"||e.target===$("dv"))$("dv").close();
  if(a==="edit"){$("dv").close();form(id)}
+ if(a==="pin"){
+  if(pins[id]){var u=await sb.from("profile_pins").delete().eq("user_id",user.id).eq("item_id",id);if(u.error){toast("Couldn’t unpin: "+u.error.message);return}delete pins[id];toast("Unpinned")}
+  else{var used={};Object.keys(pins).forEach(function(k){used[pins[k]]=1});var pos=[1,2,3].filter(function(p){return !used[p]})[0];
+   if(!pos){toast("You can pin up to 3. Unpin one first.");return}
+   var w=await sb.from("profile_pins").insert({user_id:user.id,position:pos,item_id:id});if(w.error){toast("Couldn’t pin: "+w.error.message);return}pins[id]=pos;toast("Pinned to the top")}
+  $("dv").close();render()}
  if(a==="cp"){var cc=items.filter(function(x){return x.id===id})[0];if(cc)copyText(cc.url)}
  if(a==="dl"){var c2=items.filter(function(x){return x.id===id})[0];if(c2){var r=c2.raw;
   try{toast("Preparing your badge…");await CDBake.download({name:c2.name,description:c2.desc,criteria:r.criteria,skills:r.skills,orgName:c2.issuer,orgWebsite:r.org_website,issuedOn:r.issued_on,expires:r.expires_on,verifyUrl:c2.url,infoUrl:BASE+"badge.html?t="+r.template_id,imageUrl:c2.img},badge({issuer:c2.issuer,name:c2.name}));toast("Badge downloaded")}
@@ -232,6 +244,7 @@ $("dv").onclick=async function(e){
   var r=await sb.from("credentials").delete().eq("id",id);
   if(r.error){toast("Couldn’t delete: "+r.error.message);return}
   if(c&&c.path)await sb.storage.from("badges").remove([c.path]);
+  await sb.from("profile_pins").delete().eq("user_id",user.id).eq("item_id",id);
   $("dv").close();await refresh();toast("Credential deleted")}
 };
 function fillCats(cur){
@@ -306,14 +319,18 @@ $("mig").onclick=async function(){
 
 /* ---------- recommendations ---------- */
 function norm(s){return String(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"")}
+function clean(s){return norm(String(s||"").replace(/\([^)]*\)/g,""))}
+function codeOf(s){var m=String(s||"").match(/\bMC[AC]\d{5}\b/i);return m?m[0].toLowerCase():""}
 function urlKey(u){return String(u||"").toLowerCase().replace(/^https?:\/\/(www\.)?/,"").split(/[?#]/)[0].replace(/\/+$/,"")}
 var FIELDS=[
- [/engineer/i,["Design & Making","Simulation & Analysis","Engineering Practice","Programming & Software","Project Management"]],
+ [/engineer/i,["Design & Making","Simulation & Analysis","Engineering Practice","Automation & Robotics","Programming & Software","Project Management","Energy & Clean Tech"]],
  [/comput|software|information tech|\bit\b|informatics|data/i,["Programming & Software","Cloud & Data","AI & Machine Learning","Cyber Security"]],
  [/business|commerce|financ|account|econom|manage/i,["Business & Finance","Leadership","Project Management","Communication & Teaching"]],
  [/educat|teach/i,["Communication & Teaching","Careers & Employability"]],
- [/environment|sustainab|climate|science/i,["Sustainability","Careers & Employability"]],
- [/design|architect|manufactur/i,["Design & Making"]]
+ [/environment|sustainab|climate|science/i,["Sustainability","Energy & Clean Tech","Careers & Employability"]],
+ [/design|architect|manufactur/i,["Design & Making"]],
+ [/agricultur|farm|mining|resource|geolog/i,["Resources & Agriculture"]],
+ [/communit|social work|disabilit|nursing|health|psycholog/i,["Community & Inclusion"]]
 ];
 function fieldCats(f){var o=[];FIELDS.forEach(function(x){if(x[0].test(f))x[1].forEach(function(k){if(o.indexOf(k)<0)o.push(k)})});return o}
 /* Eligibility is a hint, not a rule: a mismatch only lowers the rank, it never hides a badge. */
@@ -336,14 +353,14 @@ function audience(a){
  else if(/^open\b/i.test(t))t=t.replace(/^open( course)?\s*/i,"Open to anyone ").trim();
  else t="Usually for: "+t;
  return t+(chk?" · not confirmed, check the badge page":"")}
-var PER_CAT=4;
+var PER_CAT=4,PER_ISSUER=3;
 function hsh(t){var x=7;for(var i=0;i<t.length;i++)x=(x*31+t.charCodeAt(i))>>>0;return x}
 function recs(){
  var uid=user?user.id:"";
- var byN={},byU={};cat.forEach(function(r){byN[norm(r.name)]=r;byU[urlKey(r.credly_url)]=r});
+ var byN={},byU={},byC={};cat.forEach(function(r){byN[clean(r.name)]=r;byU[urlKey(r.credly_url)]=r;var k=codeOf(r.credly_url);if(k)byC[k]=r});
  var held={},hc={},lad={};
  items.forEach(function(c){
-  var m=byN[norm(c.name)]||(c.url&&byU[urlKey(c.url)])||null;
+  var m=byN[clean(c.name)]||(c.url&&byU[urlKey(c.url)])||byC[codeOf(c.name+" "+c.url+" "+c.desc)]||null;
   if(m)held[m.id]=1;
   if(c.pe)return;
   var k=c.cat||(m&&m.category);if(k)hc[k]=(hc[k]||0)+1;
@@ -371,7 +388,7 @@ function recs(){
  });
  /* equal scores are ordered by a stable per-user shuffle, so no provider or alphabet gets the edge */
  out.sort(function(a,b){return b.sc-a.sc||a.h-b.h});
- var seen={},p=[],o=[];out.forEach(function(x){var k=x.r.category;seen[k]=(seen[k]||0)+1;(seen[k]<=PER_CAT?p:o).push(x)});
+ var seen={},si={},p=[],o=[];out.forEach(function(x){var k=x.r.category,v=x.r.issuer;seen[k]=(seen[k]||0)+1;si[v]=(si[v]||0)+1;(seen[k]<=PER_CAT&&si[v]<=PER_ISSUER?p:o).push(x)});
  return p.concat(o);
 }
 function homeTags(){var st=settings||{};var g=(st.goals||[]).slice();if(!g.length)g=fieldCats(st.study_field||"");return g}
@@ -431,7 +448,7 @@ function openRec(id){
   (r.checked?'<div class="meta">Last checked '+esc(r.checked)+'</div>':"")+
   (url?'<p><a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer"><strong>Go to the badge page</strong></a></p>':"")+
   '<div class="row" id="drr"><button class="btn" data-a="nfm">Not for me</button><a class="btn" href="'+esc(mail)+'" style="text-decoration:none;color:inherit">Report a problem</a><button class="btn pri" data-a="close">Close</button></div>'+
-  '<div class="row" id="nfm" hidden><span class="meta">Hide it because:</span><button class="btn" data-a="dis" data-id="'+esc(r.id)+'" data-r="not_eligible">I’m not eligible</button><button class="btn" data-a="dis" data-id="'+esc(r.id)+'" data-r="not_interested">Not interested</button><button class="btn" data-a="dis" data-id="'+esc(r.id)+'" data-r="">Just hide it</button></div>';
+  '<div class="row" id="nfm" hidden><span class="meta">Hide it because:</span><button class="btn" data-a="dis" data-id="'+esc(r.id)+'" data-r="already_have">I already have it</button><button class="btn" data-a="dis" data-id="'+esc(r.id)+'" data-r="not_eligible">I’m not eligible</button><button class="btn" data-a="dis" data-id="'+esc(r.id)+'" data-r="not_interested">Not interested</button><button class="btn" data-a="dis" data-id="'+esc(r.id)+'" data-r="">Just hide it</button></div>';
  $("dr").showModal();
 }
 async function dismiss(id,reason){
