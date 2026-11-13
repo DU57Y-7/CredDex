@@ -39,6 +39,7 @@
       <h2>Issued badges</h2>
       <div class="f">
         <label>Badge<select id="ftpl"></select></label>
+        <label>Show<select id="fst"><option value="active">Active</option><option value="revoked">Revoked</option><option value="all">All</option></select></label>
         <label>Search by email<input type="search" id="fq" placeholder="Part of an email address"></label>
       </div>
       <div id="il"></div>
@@ -133,7 +134,7 @@ $("igo").onclick=async function(){
  var r=await sb.rpc("issue_badges",{p_template:t.id,p_emails:em,p_expires:$("iex").value||null,p_note:$("ino").value.trim()||null});
  b.disabled=false;
  if(r.error){toast("Couldn’t issue: "+r.error.message);return}
- var c={issued:0,duplicate:0,invalid:0},bad=[];(r.data||[]).forEach(function(x){c[x.result]=(c[x.result]||0)+1;if(x.result==="invalid")bad.push(x.email)});
+ var c={issued:0,duplicate:0,invalid:0},bad=[];(r.data||[]).forEach(function(x){c[x.result==="reissued"?"issued":x.result]=(c[x.result==="reissued"?"issued":x.result]||0)+1;if(x.result==="invalid")bad.push(x.email)});
  var msg='Hi! You’ve been awarded “'+t.name+'” by '+(org?org.name:"us")+' on CredDex.\n\nTo add it to your collection, sign in at '+CD.BASE+'app.html with this email address, then tap “Add to my CredDex” on the banner at the top.\n\nAnyone can check a badge at '+CD.BASE+'verify.html';
  $("ires").innerHTML='<div class="li"><strong class="ok">Issued: '+c.issued+'</strong>'+(c.duplicate?'<span class="muted">Already had it: '+c.duplicate+'</span>':"")+(c.invalid?'<span class="bad">Not valid emails: '+esc(bad.join(", "))+'</span>':"")+'</div>'+
   (c.issued?'<label>Message you can send them<textarea id="imsg" rows="6" readonly>'+esc(msg)+'</textarea></label><div class="row"><button class="btn" id="icp">Copy message</button></div>':"");
@@ -146,22 +147,27 @@ async function loadIssued(){
  if(!org){$("il").innerHTML='<p class="muted">Choose an organisation.</p>';return}
  if(!page)fillFilterKeep();
  var q=sb.from("issued_badges").select("id,recipient_email,issued_on,expires_on,status,recipient_user_id,verify_code,badge_templates(name)").eq("org_id",org.id).order("created_at",{ascending:false}).range(page*PS,page*PS+PS-1);
- if($("ftpl").value)q=q.eq("template_id",$("ftpl").value);
+ if($("ftpl").value)q=q.eq("template_id",$("ftpl").value);var fs=$("fst").value;if(fs==="active")q=q.neq("status","revoked");else if(fs==="revoked")q=q.eq("status","revoked");
  var s=$("fq").value.trim().replace(/[%,()*]/g,"");if(s)q=q.ilike("recipient_email","%"+s+"%");
  var r=await q;if(r.error){toast("Couldn’t load: "+r.error.message);return}
  var d=r.data||[];
  var h=d.map(function(b){
   var st=b.status==="revoked"?'<span class="bad">Revoked</span>':(b.recipient_user_id?'<span class="ok">Claimed</span>':'<span class="muted">Waiting to be claimed</span>');
-  return '<div class="li"><div class="top2"><strong>'+esc(b.badge_templates?b.badge_templates.name:"Badge")+'</strong>'+st+'</div><div>'+esc(b.recipient_email)+'</div><div class="muted">Issued '+esc(CD.fmtDate(b.issued_on))+(b.expires_on?" · expires "+esc(CD.fmtDate(b.expires_on)):"")+'</div><div class="acts"><button class="btn sm" data-a="cp" data-c="'+esc(b.verify_code)+'">Copy verify link</button>'+(b.status==="revoked"?"":'<button class="btn sm del" data-a="rv" data-id="'+esc(b.id)+'">Revoke</button>')+'</div></div>'}).join("");
+  return '<div class="li"><div class="top2"><strong>'+esc(b.badge_templates?b.badge_templates.name:"Badge")+'</strong>'+st+'</div><div>'+esc(b.recipient_email)+'</div><div class="muted">Issued '+esc(CD.fmtDate(b.issued_on))+(b.expires_on?" · expires "+esc(CD.fmtDate(b.expires_on)):"")+'</div><div class="acts"><button class="btn sm" data-a="cp" data-c="'+esc(b.verify_code)+'">Copy verify link</button>'+(b.status==="revoked"?'<button class="btn sm" data-a="ri" data-id="'+esc(b.id)+'">Reinstate</button>':'<button class="btn sm del" data-a="rv" data-id="'+esc(b.id)+'">Revoke</button>')+'</div></div>'}).join("");
  $("il").innerHTML=(page?$("il").innerHTML:"")+(h||(page?"":'<p class="muted">Nothing issued yet.</p>'));
  $("ilm").hidden=d.length<PS}
 function fillFilterKeep(){var v=$("ftpl").value;fillFilter();$("ftpl").value=v}
 $("ilm").onclick=function(){page++;loadIssued()};
-$("ftpl").onchange=function(){page=0;$("il").innerHTML="";loadIssued()};
+$("ftpl").onchange=$("fst").onchange=function(){page=0;$("il").innerHTML="";loadIssued()};
 var ft;$("fq").oninput=function(){clearTimeout(ft);ft=setTimeout(function(){page=0;$("il").innerHTML="";loadIssued()},350)};
 $("il").onclick=async function(e){
  var b=e.target.closest("button");if(!b)return;
  if(b.dataset.a==="cp"){var u=CD.BASE+"verify.html?c="+b.dataset.c;navigator.clipboard.writeText(u).then(function(){toast("Link copied")},function(){prompt("Copy this link:",u)})}
+ if(b.dataset.a==="ri"){
+  if(!confirm("Reinstate this badge? It becomes valid again, with the same verification link."))return;
+  var rr=await sb.rpc("reinstate_badge",{p_id:b.dataset.id});
+  if(rr.error){toast("Couldn’t reinstate: "+rr.error.message);return}
+  toast("Badge reinstated");page=0;$("il").innerHTML="";loadIssued();return}
  if(b.dataset.a==="rv"){
   if(!confirm("Revoke this badge? The recipient will see it marked as revoked."))return;
   var why=prompt("Reason for revoking (optional, only your organisation sees it):");if(why===null)return;

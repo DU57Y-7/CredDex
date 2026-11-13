@@ -157,3 +157,7 @@ dialog{max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px)}
 
 .card.pinned{position:relative;border-color:var(--acc)}
 .pin{position:absolute;top:8px;right:8px;width:18px;height:18px;color:var(--acc)}
+
+.mn{position:relative;flex:1;min-width:0}.mn>summary{list-style:none;cursor:pointer;text-align:center}.mn>summary::-webkit-details-marker{display:none}
+.mn>summary::after{content:" ▾"}.mn[open]>summary::after{content:" ▴"}.mn .mi{display:grid;gap:6px;margin-top:6px}.mn .mi .btn{width:100%;box-sizing:border-box;text-align:center}
+.btn.cb{display:inline-block;width:180px;box-sizing:border-box;text-align:center;padding-left:0;padding-right:0}

@@ -176,7 +176,7 @@ async function refresh(owner){
  pins={};(pr.data||[]).forEach(function(x){pins[x.item_id]=x.position});
  var vr=owner?await sb.rpc("public_issued_badges_v2",{p_username:PUB.toLowerCase()}):await sb.rpc("my_issued_badges_v2");
  (vr.data||[]).filter(function(x){return x.status!=="revoked"}).forEach(function(x){
-  items.push({id:"v"+x.id,ver:true,raw:x,name:x.name,issuer:x.org_name,date:x.issued_on||"",desc:x.description||"",url:BASE+"verify.html?c="+x.verify_code,tags:["Verified"].concat(x.status==="revoked"?["Revoked"]:[]),hidden:false,cat:topic(x.category||""),pe:false,
+  items.push({id:"v"+x.id,ver:true,raw:x,name:x.name,issuer:x.org_name,date:x.issued_on||"",desc:x.description||"",url:BASE+"verify.html?c="+x.verify_code,tags:["Verified"].concat(x.tags||[]),hidden:!!x.hidden,cat:topic(x.category||""),pe:false,
    img:x.image_path?sb.storage.from("badge-art").getPublicUrl(x.image_path).data.publicUrl:""})});
  render();renderRec();
 }
@@ -213,16 +213,19 @@ function liUrl(c){
  if(r.expires_on){var e=new Date(r.expires_on+"T00:00:00");if(!isNaN(e))u+="&expirationYear="+e.getFullYear()+"&expirationMonth="+(e.getMonth()+1)}
  return u}
 function verActions(c){
- var r=c.raw,ok=r.status!=="revoked",own=!PUB,info=BASE+"badge.html?t="+encodeURIComponent(r.template_id),a='target="_blank" rel="noopener noreferrer"';
- return '<div class="row"><button class="btn" data-a="cp" data-id="'+esc(c.id)+'">Copy link</button>'+(ok&&own?'<button class="btn" data-a="dl" data-id="'+esc(c.id)+'">Download PNG</button>':"")+'</div>'+
-  '<div class="row">'+(ok&&own?'<a class="btn" '+a+' href="'+esc(liUrl(c))+'">Add to LinkedIn</a>':"")+'<a class="btn" '+a+' href="'+esc(info)+'">Badge details and issuer</a><a class="btn" '+a+' href="'+esc(c.url)+'">Verify</a></div>'}
+ var r=c.raw,ok=r.status!=="revoked",own=!PUB,info=BASE+"badge.html?t="+encodeURIComponent(r.template_id),a='target="_blank" rel="noopener noreferrer"',id=esc(c.id);
+ var share='<button class="btn" data-a="cp" data-id="'+id+'">Copy link</button>'+(ok&&own?'<button class="btn" data-a="dl" data-id="'+id+'">Download PNG</button><a class="btn" '+a+' href="'+esc(liUrl(c))+'">Add to LinkedIn</a>':""),
+  view='<a class="btn" '+a+' href="'+esc(c.url)+'">Verify page</a><a class="btn" '+a+' href="'+esc(info)+'">Badge details</a>',
+  manage=own?'<button class="btn" data-a="pin" data-id="'+id+'">'+(pins[c.id]?"Unpin":"Pin to top")+'</button><button class="btn" data-a="hd" data-id="'+id+'">'+(c.hidden?"Show on profile":"Hide from profile")+'</button><button class="btn" data-a="tg" data-id="'+id+'">Edit tags</button>':"";
+ return '<div class="row"><details class="mn"><summary class="btn">Share</summary><div class="mi">'+share+'</div></details><details class="mn"><summary class="btn">View</summary><div class="mi">'+view+'</div></details>'+(manage?'<details class="mn"><summary class="btn">Manage</summary><div class="mi">'+manage+'</div></details>':"")+'</div>'}
+async function setPrefs(c,hidden,tags){var r=await sb.rpc("set_issued_prefs",{p_issued:String(c.raw.id),p_hidden:hidden,p_tags:tags});if(r.error){toast("Couldn’t save: "+r.error.message);return}toast("Saved");$("dv").close();await refresh()}
 function copyText(t){navigator.clipboard.writeText(t).then(function(){toast("Link copied")},function(){prompt("Copy this link:",t)})}
 function open(id){
  var c=items.filter(function(x){return x.id===id})[0];if(!c)return;
  var url=/^https?:\/\//i.test(c.url||"")?c.url:"";
  $("dvb").innerHTML=badge(c)+'<h2>'+esc(c.name)+'</h2><div class="meta">'+esc(c.issuer)+(c.date?" · "+esc(fmt(c.date)):"")+'</div>'+(c.pe?'<div class="meta">Past event or one-off</div>':"")+(c.ver?'<div class="meta">Verified credential issued through CredDex</div>':"")+(c.desc?'<p>'+esc(c.desc)+'</p>':"")+tagsHtml(c)+
   (c.ver?verActions(c):(url?'<p><a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">View evidence</a></p>':""))+
-  '<div class="row">'+(PUB?"":'<button class="btn" data-a="pin" data-id="'+esc(id)+'">'+(pins[id]?"Unpin":"Pin to top")+'</button>')+(PUB||c.ver?"":'<button class="btn del" data-a="del" data-id="'+esc(id)+'">Delete</button><button class="btn" data-a="edit" data-id="'+esc(id)+'">Edit</button>')+'<button class="btn pri" data-a="close">Close</button></div>';
+  '<div class="row">'+(PUB||c.ver?"":'<button class="btn" data-a="pin" data-id="'+esc(id)+'">'+(pins[id]?"Unpin":"Pin to top")+'</button>')+(PUB||c.ver?"":'<button class="btn del" data-a="del" data-id="'+esc(id)+'">Delete</button><button class="btn" data-a="edit" data-id="'+esc(id)+'">Edit</button>')+'<button class="btn pri" data-a="close">Close</button></div>';
  $("dv").showModal();
 }
 $("grid").onclick=function(e){var c=e.target.closest(".card");if(c)open(c.dataset.id)};
@@ -237,6 +240,8 @@ $("dv").onclick=async function(e){
    if(!pos){toast("You can pin up to 3. Unpin one first.");return}
    var w=await sb.from("profile_pins").insert({user_id:user.id,position:pos,item_id:id});if(w.error){toast("Couldn’t pin: "+w.error.message);return}pins[id]=pos;toast("Pinned to the top")}
   $("dv").close();render()}
+ if(a==="hd"){var hc=items.filter(function(x){return x.id===id})[0];if(hc)await setPrefs(hc,!hc.hidden,(hc.tags||[]).filter(function(t){return t!=="Verified"}))}
+ if(a==="tg"){var tc=items.filter(function(x){return x.id===id})[0];if(tc){var cur=(tc.tags||[]).filter(function(t){return t!=="Verified"}).join(", "),v=prompt("Tags, separated by commas (up to 10)",cur);if(v!==null)await setPrefs(tc,!!tc.hidden,v.split(",").map(function(t){return t.trim().slice(0,30)}).filter(Boolean).slice(0,10))}}
  if(a==="cp"){var cc=items.filter(function(x){return x.id===id})[0];if(cc)copyText(cc.url)}
  if(a==="dl"){var c2=items.filter(function(x){return x.id===id})[0];if(c2){var r=c2.raw;
   try{toast("Preparing your badge…");await CDBake.download({name:c2.name,description:c2.desc,criteria:r.criteria,skills:r.skills,orgName:c2.issuer,orgWebsite:r.org_website,issuedOn:r.issued_on,expires:r.expires_on,verifyUrl:c2.url,infoUrl:BASE+"badge.html?t="+r.template_id,imageUrl:c2.img},badge({issuer:c2.issuer,name:c2.name}));toast("Badge downloaded")}

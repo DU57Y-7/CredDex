@@ -26,14 +26,23 @@ $("ft2").innerHTML=CD.footer();
 (async function(){
 var v=$("v"),slug=new URLSearchParams(location.search).get("o")||"";
 var r=slug?await sb.rpc("public_org",{p_slug:slug}):{data:[]};
-if(r.error||!r.data||!r.data.length){v.innerHTML='<h2>Organisation not found</h2><p class="muted"><a href="companies.html">See all organisations</a></p>';return}
-var o=r.data[0],w=CD.safeUrl(o.website),bs=o.badges||[],to=/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(o.contact_email||"")?o.contact_email:CD.MAIL;
+if(r.error||!r.data||!r.data.length){v.innerHTML='<div class="row"><a class="btn cb" href="companies.html">All organisations</a></div><h2>Organisation not found</h2>';return}
+var o=r.data[0],w=CD.safeUrl(o.website),bs=o.badges||[],to=/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(o.contact_email||"")?o.contact_email:CD.MAIL,N=12,shown=N;
 document.title=o.name+" · CredDex";
-var groups={},order=[];bs.forEach(function(b){var k=b.family||"";if(!groups[k]){groups[k]=[];order.push(k)}groups[k].push(b)});
-function card(b){return '<a href="badge.html?t='+encodeURIComponent(b.id)+'" style="text-decoration:none;color:inherit;display:block;text-align:center">'+CD.badge({issuer:o.name,name:b.name,img:CD.artUrl(b.image_path)})+'<div style="margin-top:6px"><strong>'+esc(b.name)+'</strong></div></a>'}
-v.innerHTML='<h2>'+esc(o.name)+'</h2>'+(w?'<div class="meta"><a href="'+esc(w)+'" target="_blank" rel="noopener noreferrer">'+esc(w.replace(/^https?:\/\//,""))+'</a></div>':"")+(o.description?'<p style="white-space:pre-wrap">'+esc(o.description)+'</p>':"")+
- '<div class="row"><a class="btn pri" href="mailto:'+esc(to)+'">Contact '+esc(o.name)+'</a><a class="btn" href="companies.html">All organisations</a></div><h3>Badges ('+bs.length+')</h3>'+
- (order.map(function(k){return (k?'<h4 style="margin:16px 0 6px">'+esc(k)+'</h4>':"")+'<div style="display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">'+groups[k].map(card).join("")+'</div>'}).join("")||'<p class="muted">No badges yet.</p>')})();
+var fams=[];bs.forEach(function(b){if(b.family&&fams.indexOf(b.family)<0)fams.push(b.family)});
+var big=bs.length>=3;
+v.innerHTML='<div class="row"><a class="btn cb" href="companies.html">All organisations</a></div><h2>'+esc(o.name)+'</h2>'+(o.description?'<p style="white-space:pre-wrap">'+esc(o.description)+'</p>':"")+
+ '<div class="row">'+(w?'<a class="btn cb" href="'+esc(w)+'" target="_blank" rel="noopener noreferrer">Website</a>':"")+'<a class="btn cb" href="mailto:'+esc(to)+'">Email</a></div><h3>Badges ('+bs.length+')</h3>'+
+ (big?'<div class="row"><input id="bq" placeholder="Search badges" style="flex:1;min-width:180px">'+(fams.length>1?'<select id="bf"><option value="">All families</option>'+fams.map(function(f){return '<option>'+esc(f)+'</option>'}).join("")+'</select>':"")+'</div>':"")+
+ '<div id="bg" style="display:grid;gap:18px 14px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));align-items:start"></div><div class="row" id="bm" hidden><button class="btn cb" id="bmb"></button></div>';
+function tile(b){var img=b.image_path?'<img src="'+esc(CD.artUrl(b.image_path))+'" alt="" loading="lazy" style="max-width:100%;max-height:100%;object-fit:contain">':CD.badge({issuer:o.name,name:b.name,img:""});
+ return '<a href="badge.html?t='+encodeURIComponent(b.id)+'" style="display:flex;flex-direction:column;align-items:center;text-decoration:none;color:inherit"><div style="width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center">'+img+'</div><div style="margin-top:8px;text-align:center;font-weight:600;min-height:2.6em">'+esc(b.name)+'</div></a>'}
+function draw(){var q=($("bq")?$("bq").value:"").trim().toLowerCase(),f=$("bf")?$("bf").value:"",l=bs.filter(function(b){return(!f||b.family===f)&&(!q||String(b.name).toLowerCase().indexOf(q)>=0)});
+ $("bg").innerHTML=l.slice(0,shown).map(tile).join("")||'<p class="muted">No badges match.</p>';
+ $("bm").hidden=l.length<=shown;$("bmb").textContent="Show more ("+(l.length-shown)+")"}
+if($("bq"))$("bq").oninput=function(){shown=N;draw()};if($("bf"))$("bf").onchange=function(){shown=N;draw()};
+$("bmb").onclick=function(){shown+=N;draw()};draw();
+})();
 })();
 </script>
 </body>
