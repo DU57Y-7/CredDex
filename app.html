@@ -174,7 +174,7 @@ async function refresh(owner){
   var pr=await sb.from("profile_pins").select("item_id,position").eq("user_id",owner||user.id);
  pins={};(pr.data||[]).forEach(function(x){pins[x.item_id]=x.position});
  var vr=owner?await sb.rpc("public_issued_badges",{p_username:PUB.toLowerCase()}):await sb.rpc("my_issued_badges");
- (vr.data||[]).forEach(function(x){
+(vr.data||[]).filter(function(x){return x.status!=="revoked"}).forEach(function(x){
   items.push({id:"v"+x.id,ver:true,raw:x,name:x.name,issuer:x.org_name,date:x.issued_on||"",desc:x.description||"",url:BASE+"verify.html?c="+x.verify_code,tags:["Verified"].concat(x.status==="revoked"?["Revoked"]:[]),hidden:false,cat:topic(x.category||""),pe:false,
    img:x.image_path?sb.storage.from("badge-art").getPublicUrl(x.image_path).data.publicUrl:""})});
  render();renderRec();
