@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>if(location.hostname==="du57y-7.github.io")location.replace("https://creddex.dustinmcguire.com"+location.pathname.replace(/^\/CredDex/,"")+location.search+location.hash)</script>
+<script>if(location.hostname==="du57y-7.github.io")location.replace("https://creddex.dustinmcguire.com"+location.pathname.replace(/^\/CredDex/,"")+location.search+location.hash)</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>My CredDex</title>
@@ -84,6 +84,7 @@
   <div class="meta" id="pa" aria-live="polite"></div>
   <label>Display name (doesn’t need to be unique)<input id="pn" maxlength="60"></label>
   <label class="chk"><input id="pv" type="checkbox"> Make my profile public</label>
+  <label class="chk"><input id="pshow" type="checkbox"> Show my display name on the verification page for my badges</label><p class="muted" style="margin:0">Off by default. When on, anyone who opens a verification link for your badges sees your display name, which helps show a badge really is yours.</p>
   <div class="meta" id="pl" style="word-break:break-all"></div>
   <div class="row"><button class="btn" id="pk">Copy link</button><button class="btn pri" id="ps">Save profile</button></div>
 
@@ -173,8 +174,8 @@ async function refresh(owner){
  items=r.data.map(function(x){return{id:x.id,name:x.name,issuer:x.issuer,date:x.earned_on||"",desc:x.description||"",url:x.evidence_url||"",tags:x.tags||[],path:x.badge_path,hidden:!!x.hidden,cat:topic(x.category||""),pe:!!x.past_event,img:urls[x.badge_path]||""}});
   var pr=await sb.from("profile_pins").select("item_id,position").eq("user_id",owner||user.id);
  pins={};(pr.data||[]).forEach(function(x){pins[x.item_id]=x.position});
- var vr=owner?await sb.rpc("public_issued_badges",{p_username:PUB.toLowerCase()}):await sb.rpc("my_issued_badges");
-(vr.data||[]).filter(function(x){return x.status!=="revoked"}).forEach(function(x){
+ var vr=owner?await sb.rpc("public_issued_badges_v2",{p_username:PUB.toLowerCase()}):await sb.rpc("my_issued_badges_v2");
+ (vr.data||[]).filter(function(x){return x.status!=="revoked"}).forEach(function(x){
   items.push({id:"v"+x.id,ver:true,raw:x,name:x.name,issuer:x.org_name,date:x.issued_on||"",desc:x.description||"",url:BASE+"verify.html?c="+x.verify_code,tags:["Verified"].concat(x.status==="revoked"?["Revoked"]:[]),hidden:false,cat:topic(x.category||""),pe:false,
    img:x.image_path?sb.storage.from("badge-art").getPublicUrl(x.image_path).data.publicUrl:""})});
  render();renderRec();
@@ -487,7 +488,7 @@ $("pm").onclick=function(){var t=$("pe").value;if(!t){toast("Enter your username
  navigator.clipboard.writeText(t).then(function(){toast("Embed code copied")},function(){$("pe").select();toast("Press Ctrl+C to copy.")})};
 async function openShare(){
  var r=await sb.from("profiles").select("*").eq("user_id",user.id).maybeSingle(),d=r.data;
- $("pem").value=user.email||"";$("pu").value=d?d.username:"";$("pn").value=d&&d.display_name||"";$("pv").checked=d?d.is_public:true;showLink();
+ $("pem").value=user.email||"";$("pu").value=d?d.username:"";$("pn").value=d&&d.display_name||"";$("pv").checked=d?d.is_public:true;$("pshow").checked=!!(d&&d.show_name_on_verify);showLink();
  var st=settings||{},gl=st.goals||[];
  $("pi").value=st.institution||"";$("pf").value=st.study_field||"";$("pst").value=st.status||"";
  $("pg").innerHTML=allCats().map(function(x){return '<label><input type="checkbox" value="'+esc(x)+'"'+(gl.indexOf(x)>-1?" checked":"")+'> '+esc(x)+'</label>'}).join("");
@@ -503,7 +504,7 @@ $("pc").onclick=function(){$("ds").close()};
 $("ps").onclick=async function(){
  var u=$("pu").value.trim().toLowerCase();
  if(!/^[a-z0-9_]{3,30}$/.test(u)){toast("Username needs 3–30 letters, numbers or underscores.");return}
- var r=await sb.from("profiles").upsert({user_id:user.id,username:u,display_name:$("pn").value.trim()||null,is_public:$("pv").checked},{onConflict:"user_id"});
+ var r=await sb.from("profiles").upsert({user_id:user.id,username:u,display_name:$("pn").value.trim()||null,is_public:$("pv").checked,show_name_on_verify:$("pshow").checked&&!!$("pn").value.trim()},{onConflict:"user_id"});
  if(r.error){toast(r.error.code==="23505"?"That username is taken. Try another.":r.error.code==="23514"?"That username isn’t allowed. Try another.":"Couldn’t save: "+r.error.message);return}
  toast($("pv").checked?"Saved. Your link is live.":"Saved. Your profile is private.");showLink()};
 $("pss").onclick=async function(){

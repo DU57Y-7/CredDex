@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Organisations · CredDex</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="cd.css">
+</head>
+<body>
+<header>
+  <h1><a href="index.html">CredDex</a><small>Organisations</small></h1>
+  <div class="acts"><a class="btn" href="index.html">Home</a></div>
+</header>
+<div class="vwrap" style="max-width:760px">
+  <div id="v"><p class="muted">Loading…</p></div>
+</div>
+<footer class="foot" id="ft2"></footer>
+<div id="toast" role="status"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="cd.js"></script>
+<script>
+(function(){
+var $=CD.$,esc=CD.esc,sb=CD.sb;
+$("ft2").innerHTML=CD.footer();
+(async function(){
+var v=$("v"),r=await sb.rpc("public_organisations");
+if(r.error){v.innerHTML='<p class="muted">Couldn’t load organisations.</p>';return}
+var l=r.data||[];
+if(!l.length){v.innerHTML='<h2>Organisations</h2><p class="muted">No organisations yet.</p>';return}
+v.innerHTML='<h2>Organisations using CredDex</h2><div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))">'+l.map(function(o){
+ var d=String(o.description||"");if(d.length>160)d=d.slice(0,157)+"…";
+ return '<a class="panel" style="text-decoration:none;color:inherit;display:block" href="company.html?o='+encodeURIComponent(o.slug)+'"><h3 style="margin:0 0 6px">'+esc(o.name)+'</h3><div class="muted">'+esc(d)+'</div><div class="meta" style="margin-top:8px">'+o.badge_count+(o.badge_count===1?" badge":" badges")+'</div></a>'}).join("")+'</div>'})();
+})();
+</script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>if(location.hostname==="du57y-7.github.io")location.replace("https://creddex.dustinmcguire.com"+location.pathname.replace(/^\/CredDex/,"")+location.search+location.hash)</script>
+<script>if(location.hostname==="du57y-7.github.io")location.replace("https://creddex.dustinmcguire.com"+location.pathname.replace(/^\/CredDex/,"")+location.search+location.hash)</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Badge details · CredDex</title>
@@ -27,7 +27,7 @@ $("ft2").innerHTML=CD.footer();
 async function load(){
  var id=new URLSearchParams(location.search).get("t"),v=$("v");
  if(!/^[0-9a-f-]{36}$/i.test(id||"")){v.innerHTML='<h2>Badge not found</h2><p class="muted">Check the link and try again.</p>';return}
- var r=await sb.rpc("public_template",{p_id:id});
+ var r=await sb.rpc("public_template_v2",{p_id:id});
  if(r.error||!r.data||!r.data.length){v.innerHTML='<h2>Badge not found</h2><p class="muted">This badge doesn’t exist or is no longer available.</p>';return}
  var b=r.data[0],sk=String(b.skills||"").split(";").map(function(s){return s.trim()}).filter(Boolean),w=CD.safeUrl(b.org_website),
   to=/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(b.contact_email||"")?b.contact_email:CD.MAIL,
@@ -39,8 +39,7 @@ async function load(){
   (b.criteria?'<div class="panel" style="text-align:left;width:100%"><h3>Criteria</h3><div style="white-space:pre-wrap">'+esc(b.criteria)+'</div></div>':"")+
   (sk.length?'<div class="tags">'+sk.map(function(s){return '<span class="tag">'+esc(s)+'</span>'}).join("")+'</div>':"")+
   (b.category||b.level?'<div class="meta">'+esc([b.category,b.level].filter(Boolean).join(" · "))+'</div>':"")+
-  (b.org_description?'<div class="panel" style="text-align:left;width:100%"><h3>About '+esc(b.org_name)+'</h3><div style="white-space:pre-wrap">'+esc(b.org_description)+'</div></div>':"")+
-  '<div class="row"><a class="btn pri" href="'+esc(mail)+'">Contact '+esc(b.org_name)+'</a></div>'+
+  '<div class="row"><a class="btn pri" href="'+esc(mail)+'">Contact '+esc(b.org_name)+'</a>'+(b.org_slug?'<a class="btn" href="company.html?o='+encodeURIComponent(b.org_slug)+'">All badges from '+esc(b.org_name)+'</a>':"")+'</div>'+
   '<p class="meta">To check a specific badge someone has shown you, open the verification link they gave you.</p></div>'}
 load();
 })();

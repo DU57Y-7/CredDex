@@ -50,6 +50,6 @@ CD.audience=function(a){
  else t="Usually for: "+t;
  return t+(chk?" · not confirmed, check the badge page":"")};
 CD.fmtDate=function(d){if(!d)return "";var x=new Date(d+"T00:00:00");return isNaN(x)?d:x.toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"})};
-CD.footer=function(){return '<a href="index.html">Home</a> · <a href="pricing.html">For organisations</a> · <a href="creddex-terms.html">Terms</a> · <a href="creddex-privacy.html">Privacy</a>'};
+CD.footer=function(){return '<a href="index.html">Home</a> · <a href="companies.html">Companies</a> · <a href="pricing.html">For organisations</a> · <a href="creddex-terms.html">Terms</a> · <a href="creddex-privacy.html">Privacy</a>'};
 w.CD=CD;
 })(window);

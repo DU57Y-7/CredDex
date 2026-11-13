@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Organisation · CredDex</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="cd.css">
+</head>
+<body>
+<header>
+  <h1><a href="index.html">CredDex</a><small>Organisation</small></h1>
+  <div class="acts"><a class="btn" href="index.html">Home</a></div>
+</header>
+<div class="vwrap" style="max-width:760px">
+  <div id="v"><p class="muted">Loading…</p></div>
+</div>
+<footer class="foot" id="ft2"></footer>
+<div id="toast" role="status"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="cd.js"></script>
+<script>
+(function(){
+var $=CD.$,esc=CD.esc,sb=CD.sb;
+$("ft2").innerHTML=CD.footer();
+(async function(){
+var v=$("v"),slug=new URLSearchParams(location.search).get("o")||"";
+var r=slug?await sb.rpc("public_org",{p_slug:slug}):{data:[]};
+if(r.error||!r.data||!r.data.length){v.innerHTML='<h2>Organisation not found</h2><p class="muted"><a href="companies.html">See all organisations</a></p>';return}
+var o=r.data[0],w=CD.safeUrl(o.website),bs=o.badges||[],to=/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(o.contact_email||"")?o.contact_email:CD.MAIL;
+document.title=o.name+" · CredDex";
+var groups={},order=[];bs.forEach(function(b){var k=b.family||"";if(!groups[k]){groups[k]=[];order.push(k)}groups[k].push(b)});
+function card(b){return '<a href="badge.html?t='+encodeURIComponent(b.id)+'" style="text-decoration:none;color:inherit;display:block;text-align:center">'+CD.badge({issuer:o.name,name:b.name,img:CD.artUrl(b.image_path)})+'<div style="margin-top:6px"><strong>'+esc(b.name)+'</strong></div></a>'}
+v.innerHTML='<h2>'+esc(o.name)+'</h2>'+(w?'<div class="meta"><a href="'+esc(w)+'" target="_blank" rel="noopener noreferrer">'+esc(w.replace(/^https?:\/\//,""))+'</a></div>':"")+(o.description?'<p style="white-space:pre-wrap">'+esc(o.description)+'</p>':"")+
+ '<div class="row"><a class="btn pri" href="mailto:'+esc(to)+'">Contact '+esc(o.name)+'</a><a class="btn" href="companies.html">All organisations</a></div><h3>Badges ('+bs.length+')</h3>'+
+ (order.map(function(k){return (k?'<h4 style="margin:16px 0 6px">'+esc(k)+'</h4>':"")+'<div style="display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">'+groups[k].map(card).join("")+'</div>'}).join("")||'<p class="muted">No badges yet.</p>')})();
+})();
+</script>
+</body>
+</html>

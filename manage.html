@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>if(location.hostname==="du57y-7.github.io")location.replace("https://creddex.dustinmcguire.com"+location.pathname.replace(/^\/CredDex/,"")+location.search+location.hash)</script>
+<script>if(location.hostname==="du57y-7.github.io")location.replace("https://creddex.dustinmcguire.com"+location.pathname.replace(/^\/CredDex/,"")+location.search+location.hash)</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
@@ -69,6 +69,8 @@
         <label>What the recipient did to earn it<textarea id="tc" rows="2" maxlength="1000"></textarea></label>
         <label>Skills (separate with semicolons)<input id="ts" placeholder="Teamwork; Leadership"></label>
         <label>Topic<select id="tcat"></select></label>
+        <label>Badge family (optional, e.g. GUARD Volunteer)<input id="tfam" maxlength="60"></label>
+        <label>Tier in the family (1 = lowest: bronze 1, silver 2, gold 3)<input id="ttier" type="number" min="1" max="20"></label>
         <label>Level<select id="tlv"><option value="">Not set</option><option>Foundational</option><option>Intermediate</option><option>Advanced</option></select></label>
         <label>Artwork (PNG, JPG or WebP)<input id="tfile" type="file" accept="image/*"></label>
         <label class="chk"><input id="tli" type="checkbox"> Show on the CredDex home page</label>
@@ -206,11 +208,11 @@ function renderTpls(){
  $("tl").innerHTML=tpls.length?tpls.map(function(t){return '<div class="li"><div class="top2"><strong>'+esc(t.name)+'</strong><span class="muted">'+(t.active?"Active":"Inactive")+(t.listed?" · on home page":"")+(t.setup_paid?" · paid":" · setup unpaid")+(t.boosted_until?" · boosted until "+CD.fmtDate(t.boosted_until):"")+'</span></div><div class="acts"><button class="btn sm" data-a="ed" data-id="'+esc(t.id)+'">Edit</button><button class="btn sm" data-a="ac" data-id="'+esc(t.id)+'">'+(t.active?"Deactivate":"Activate")+'</button><button class="btn sm del" data-a="dl" data-id="'+esc(t.id)+'">Delete</button></div></div>'}).join(""):'<p class="muted">No badges yet. Create the first one below.</p>';
  resetForm()}
 function resetForm(){editT=null;imgData="";$("tft").textContent="Create a badge";$("tcx").hidden=true;
- ["tn","td","tc","ts","tno"].forEach(function(i){$(i).value=""});$("tcat").value="";$("tlv").value="";$("tfile").value="";$("tli").checked=false;$("tpd").checked=false;$("tbu").value=""}
+ ["tn","td","tc","ts","tno"].forEach(function(i){$(i).value=""});$("tcat").value="";$("tlv").value="";$("tfam").value="";$("ttier").value="";$("tfile").value="";$("tli").checked=false;$("tpd").checked=false;$("tbu").value=""}
 $("tcx").onclick=resetForm;
 $("tl").onclick=async function(e){var b=e.target.closest("button");if(!b)return;var t=tpls.filter(function(x){return x.id===b.dataset.id})[0];if(!t)return;
  if(b.dataset.a==="ed"){editT=t.id;imgData="";$("tft").textContent="Edit badge";$("tcx").hidden=false;
-  $("tn").value=t.name;$("td").value=t.description||"";$("tc").value=t.criteria||"";$("ts").value=t.skills||"";$("tcat").value=CD.topic(t.category||"");$("tlv").value=t.level||"";$("tfile").value="";$("tli").checked=!!t.listed;$("tpd").checked=!!t.setup_paid;$("tbu").value=t.boosted_until||"";$("tno").value=t.setup_notes||"";
+  $("tn").value=t.name;$("td").value=t.description||"";$("tc").value=t.criteria||"";$("ts").value=t.skills||"";$("tcat").value=CD.topic(t.category||"");$("tlv").value=t.level||"";$("tfam").value=t.family||"";$("ttier").value=t.tier||"";$("tfile").value="";$("tli").checked=!!t.listed;$("tpd").checked=!!t.setup_paid;$("tbu").value=t.boosted_until||"";$("tno").value=t.setup_notes||"";
   $("tft").scrollIntoView({behavior:CD.smooth()})}
  if(b.dataset.a==="ac"){var r=await sb.from("badge_templates").update({active:!t.active}).eq("id",t.id);if(r.error){toast(r.error.message);return}await loadTpls();renderTpls()}
  if(b.dataset.a==="dl"){if(!confirm("Delete this badge template?"))return;
@@ -232,7 +234,7 @@ $("tsv").onclick=async function(){
   var u=await sb.storage.from("badge-art").upload(p,blob,{contentType:"image/png"});
   if(u.error){b.disabled=false;toast("Artwork didn’t upload: "+u.error.message);return}
   if(path)await sb.storage.from("badge-art").remove([path]);path=p}
- var row={org_id:org.id,name:n,description:$("td").value.trim()||null,criteria:$("tc").value.trim()||null,skills:$("ts").value.trim()||null,category:$("tcat").value||null,level:$("tlv").value||null,image_path:path,listed:$("tli").checked,setup_paid:$("tpd").checked,boosted_until:$("tbu").value||null,setup_notes:$("tno").value.trim()||null};
+ var row={org_id:org.id,name:n,description:$("td").value.trim()||null,criteria:$("tc").value.trim()||null,skills:$("ts").value.trim()||null,category:$("tcat").value||null,level:$("tlv").value||null,family:$("tfam").value.trim()||null,tier:$("ttier").value?parseInt($("ttier").value,10):null,image_path:path,listed:$("tli").checked,setup_paid:$("tpd").checked,boosted_until:$("tbu").value||null,setup_notes:$("tno").value.trim()||null};
  var r=editT?await sb.from("badge_templates").update(row).eq("id",editT):await sb.from("badge_templates").insert(row);
  b.disabled=false;if(r.error){toast("Couldn’t save: "+r.error.message);return}
  await loadTpls();renderTpls();toast("Badge saved")};
